@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>입찰메이트 RFP — 디자인 시스템 프리뷰</title>
+<link rel="stylesheet" href="./tokens.css">
+<style>
+/* 이 파일에는 hex 도 px 색상값도 없다. 전부 tokens.css 의 var() 다.
+   (레이아웃 치수만 px 를 쓴다 — 그건 색이 아니라 구조다) */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+.num { font-variant-numeric: tabular-nums; }
+
+/* ===== 프리뷰 도구 자체의 껍데기 (제품 UI 아님) ===== */
+.pv-bar {
+  position: sticky; top: 0; z-index: var(--z-sticky);
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.pv-title { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); letter-spacing: var(--letter-spacing-wide); color: var(--color-text-muted); }
+.pv-seg { display: flex; gap: 2px; padding: 2px; background: var(--color-surface-sunken); border-radius: var(--radius-md); }
+.pv-seg button {
+  border: 0; background: transparent; color: var(--color-text-muted);
+  font-size: var(--font-size-sm); padding: 6px var(--space-3);
+  border-radius: var(--radius-sm); cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-standard), color var(--duration-fast) var(--easing-standard);
+}
+.pv-seg button:hover { color: var(--color-text); }
+.pv-seg button[aria-pressed="true"] { background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-xs); }
+.pv-spacer { margin-left: auto; }
+.pv-stage { padding: var(--space-8) var(--layout-gutter) var(--space-20); }
+.pv-frame { max-width: var(--layout-max-width); margin: 0 auto; }
+.pv-note {
+  max-width: 880px; margin: 0 auto var(--space-6);
+  font-size: var(--font-size-sm); color: var(--color-text-muted);
+  border-left: 3px solid var(--color-primary-border); padding-left: var(--space-3);
+}
+.pv-label { font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide); color: var(--color-text-subtle);
+  text-transform: uppercase; margin: var(--space-8) 0 var(--space-3); }
+[hidden] { display: none !important; }
+
+/* ===== 앱 셸 ===== */
+.app {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  max-width: var(--layout-max-width); margin: 0 auto;
+}
+.topbar {
+  height: var(--topbar-height);
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: 0 var(--space-5);
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
+}
+.brand { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--font-weight-semibold); font-size: var(--font-size-md); }
+.brand-mark {
+  width: 22px; height: 22px; border-radius: var(--radius-sm);
+  background: var(--color-primary); color: var(--color-primary-fg);
+  display: grid; place-items: center; font-size: 11px; font-weight: var(--font-weight-bold);
+}
+.topbar-title { font-size: var(--font-size-md); font-weight: var(--font-weight-medium);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-div { width: 1px; height: 18px; background: var(--color-border); }
+
+/* ===== Button ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  height: var(--button-height-md); padding: 0 var(--button-padding-x);
+  border-radius: var(--button-radius); border: 1px solid transparent;
+  font-size: var(--button-font-size); font-weight: var(--button-font-weight);
+  cursor: pointer; white-space: nowrap;
+  transition: background-color var(--duration-fast) var(--easing-standard),
+              border-color var(--duration-fast) var(--easing-standard),
+              color var(--duration-fast) var(--easing-standard),
+              box-shadow var(--duration-normal) var(--easing-out);
+}
+.btn-sm { height: var(--button-height-sm); padding: 0 var(--space-3); font-size: var(--font-size-sm); }
+.btn-lg { height: var(--button-height-lg); padding: 0 var(--space-5); font-size: var(--font-size-base); }
+.btn-primary { background: var(--button-primary-bg); color: var(--button-primary-fg); box-shadow: var(--shadow-xs); }
+.btn-primary:hover { background: var(--button-primary-bg-hover); box-shadow: var(--shadow-sm); }
+.btn-primary:active { background: var(--button-primary-bg-active); box-shadow: var(--shadow-none); }
+.btn-secondary { background: var(--button-secondary-bg); color: var(--button-secondary-fg); border-color: var(--button-secondary-border); }
+.btn-secondary:hover { background: var(--button-secondary-bg-hover); border-color: var(--color-slate-400); }
+.btn-ghost { background: transparent; color: var(--button-ghost-fg); }
+.btn-ghost:hover { background: var(--button-ghost-bg-hover); color: var(--color-text); }
+.btn:disabled { background: var(--button-disabled-bg); color: var(--button-disabled-fg); border-color: var(--color-border); cursor: not-allowed; box-shadow: none; }
+.spinner {
+  width: 12px; height: 12px; border-radius: var(--radius-full);
+  border: 2px solid currentColor; border-top-color: transparent;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== Input / Select ===== */
+.input, .select {
+  height: var(--input-height); padding: 0 var(--input-padding-x);
+  background: var(--input-bg); color: var(--input-fg);
+  border: 1px solid var(--input-border); border-radius: var(--input-radius);
+  font-size: var(--input-font-size);
+  transition: border-color var(--duration-fast) var(--easing-standard);
+}
+.input::placeholder { color: var(--input-placeholder); }
+.input:hover, .select:hover { border-color: var(--input-border-hover); }
+.input:focus, .select:focus { border-color: var(--input-border-focus); }
+.input-error { border-color: var(--color-danger); }
+
+/* ===== SearchBar ===== */
+.hero { text-align: center; padding: var(--space-12) var(--space-6) var(--space-6); }
+.hero h1 { font-size: var(--font-size-3xl); line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight); margin: 0 0 var(--space-2); font-weight: var(--font-weight-bold); }
+.hero p { margin: 0 0 var(--space-6); color: var(--color-text-muted); font-size: var(--font-size-base); }
+.searchbar {
+  display: flex; align-items: center; gap: var(--space-3);
+  height: var(--searchbar-height); padding: 0 var(--space-2) 0 var(--searchbar-padding-x);
+  max-width: 720px; margin: 0 auto;
+  background: var(--searchbar-bg); border: 1px solid var(--searchbar-border);
+  border-radius: var(--searchbar-radius); box-shadow: var(--searchbar-shadow);
+  transition: border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-normal) var(--easing-out);
+}
+.searchbar:hover { box-shadow: var(--shadow-md); }
+.searchbar:focus-within { border-color: var(--color-primary); box-shadow: var(--searchbar-shadow-focus); }
+.searchbar svg { color: var(--color-text-subtle); flex: none; }
+.searchbar:focus-within svg { color: var(--color-primary); }
+.searchbar input {
+  flex: 1; min-width: 0; border: 0; background: transparent; outline: none;
+  font-size: var(--searchbar-font-size);
+}
+.searchbar input::placeholder { color: var(--input-placeholder); }
+.examples { display: flex; gap: var(--space-2); justify-content: center; flex-wrap: wrap; margin-top: var(--space-4); }
+
+/* ===== Chip ===== */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  height: var(--chip-height); padding: 0 var(--chip-padding-x);
+  background: var(--chip-bg); color: var(--chip-fg);
+  border: 1px solid var(--chip-border); border-radius: var(--chip-radius);
+  font-size: var(--chip-font-size); cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-standard),
+              border-color var(--duration-fast) var(--easing-standard),
+              color var(--duration-fast) var(--easing-standard);
+}
+.chip:hover { background: var(--chip-bg-hover); color: var(--color-text); border-color: var(--color-border-strong); }
+.chip[aria-pressed="true"] { background: var(--chip-bg-selected); color: var(--chip-fg-selected); border-color: var(--chip-border-selected); }
+.chip:disabled { color: var(--color-text-subtle); border-color: var(--color-border-subtle); cursor: not-allowed; }
+.chip-x { opacity: 0.6; font-size: var(--font-size-md); }
+
+/* ===== 결과 영역 ===== */
+.results { max-width: 880px; margin: 0 auto; padding: 0 var(--space-6) var(--space-12); }
+.filterbar { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
+  padding: var(--space-4) 0; border-top: 1px solid var(--color-border); margin-top: var(--space-6); }
+.result-meta { display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-3) 0; font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.cards { display: flex; flex-direction: column; gap: var(--space-3); }
+
+/* ===== NoticeCard ===== */
+.card {
+  display: flex; flex-direction: column; gap: var(--card-gap);
+  padding: var(--card-padding);
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: var(--card-radius); box-shadow: var(--card-shadow);
+  cursor: pointer; text-align: left; width: 100%;
+  transition: border-color var(--duration-fast) var(--easing-standard),
+              box-shadow var(--duration-normal) var(--easing-out),
+              transform var(--duration-normal) var(--easing-out);
+}
+.card:hover { border-color: var(--card-border-hover); box-shadow: var(--card-shadow-hover); transform: translateY(-1px); }
+.card:focus-visible { border-color: var(--color-primary); }
+.card-closed { opacity: 0.6; box-shadow: none; border-color: var(--color-border-subtle); }
+.card-closed:hover { transform: none; }
+.card-row { display: flex; align-items: center; gap: var(--space-2); }
+.card-agency { font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.card-badges { margin-left: auto; display: flex; gap: var(--space-2); }
+.card-title { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug); margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-meta { font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.card-meta b { font-weight: var(--font-weight-semibold); color: var(--color-text); }
+.card-excerpt { font-size: var(--font-size-sm); color: var(--color-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-excerpt mark { background: var(--color-primary-subtle); color: var(--color-primary-subtle-fg); padding: 0 2px; border-radius: var(--radius-xs); }
+.card-foot { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-1); }
+.card-cta { margin-left: auto; font-size: var(--font-size-sm); color: var(--color-text-link); font-weight: var(--font-weight-medium); }
+
+/* ===== Badge ===== */
+.badge {
+  display: inline-flex; align-items: center; height: var(--badge-height);
+  padding: 0 var(--badge-padding-x); border-radius: var(--badge-radius);
+  font-size: var(--badge-font-size); font-weight: var(--badge-font-weight);
+  background: var(--color-surface-sunken); color: var(--color-text-muted);
+}
+.badge-success { background: var(--color-success-subtle); color: var(--color-success); }
+.badge-warning { background: var(--color-warning-subtle); color: var(--color-warning); }
+.badge-danger  { background: var(--color-danger-subtle);  color: var(--color-danger); }
+.badge-info    { background: var(--color-info-subtle);    color: var(--color-info); }
+
+/* ===== RelevanceBar ===== */
+.relevance { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-xs); color: var(--color-text-subtle); }
+.relevance-track { display: inline-block; width: var(--relevance-width); height: var(--relevance-height);
+  background: var(--relevance-track); border-radius: var(--relevance-radius); overflow: hidden; vertical-align: middle; }
+.relevance-fill { display: block; height: 100%; background: var(--relevance-fill); border-radius: var(--relevance-radius); }
+
+/* ===== Skeleton ===== */
+.sk { background: linear-gradient(90deg, var(--skeleton-bg) 25%, var(--skeleton-highlight) 50%, var(--skeleton-bg) 75%);
+  background-size: 200% 100%; animation: shimmer var(--skeleton-duration) linear infinite;
+  border-radius: var(--skeleton-radius); }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ===== EmptyState ===== */
+.empty { text-align: center; padding: var(--empty-padding) var(--space-6); }
+.empty-icon { font-size: var(--empty-icon-size); color: var(--empty-fg); line-height: 1; }
+.empty h3 { font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); margin: var(--space-4) 0 var(--space-2); }
+.empty p { color: var(--color-text-muted); font-size: var(--font-size-md); margin: 0 0 var(--space-5); }
+
+/* ===== 인라인 오류 ===== */
+.alert { display: flex; gap: var(--space-3); align-items: flex-start;
+  padding: var(--space-4); border-radius: var(--radius-lg);
+  background: var(--color-danger-subtle); border: 1px solid var(--color-danger);
+  font-size: var(--font-size-md); }
+.alert-warn { background: var(--color-warning-subtle); border-color: var(--color-warning); }
+.alert-title { font-weight: var(--font-weight-semibold); color: var(--color-danger); margin-bottom: var(--space-1); }
+.alert-warn .alert-title { color: var(--color-warning); }
+.alert-body { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.alert code { font-family: var(--font-family-mono); font-size: var(--font-size-xs); }
+
+/* ===== 질의응답 화면 ===== */
+.band { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  padding: var(--space-4) var(--space-6); background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border); font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.band b { color: var(--color-text); font-weight: var(--font-weight-semibold); }
+.band-dot { color: var(--color-text-subtle); }
+.qa { display: grid; grid-template-columns: 1fr var(--layout-rail-w); gap: var(--space-8);
+  padding: var(--space-8) var(--space-6); align-items: start; }
+@media (max-width: 1023px) { .qa { grid-template-columns: 1fr; } }
+.thread { min-width: 0; max-width: var(--answer-max-width); }
+.q { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug); margin: 0 0 var(--space-4); }
+.answer { background: var(--answer-bg); border: 1px solid var(--answer-border);
+  border-radius: var(--answer-radius); padding: var(--answer-padding);
+  font-size: var(--answer-font-size); line-height: var(--answer-line-height); }
+.answer p { margin: 0 0 var(--space-4); }
+.answer p:last-child { margin-bottom: 0; }
+.answer-meta { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap;
+  margin-top: var(--space-3); font-size: var(--font-size-xs); color: var(--color-text-subtle); }
+
+/* ===== CitationPill ===== */
+.cite {
+  display: inline; vertical-align: baseline;
+  padding: 1px var(--cite-pill-padding-x); margin: 0 1px;
+  background: var(--cite-pill-bg); color: var(--cite-pill-fg);
+  border: 1px solid var(--cite-pill-border); border-radius: var(--cite-pill-radius);
+  font-size: var(--cite-pill-font-size); font-weight: var(--font-weight-medium);
+  line-height: 1; cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-standard), color var(--duration-fast) var(--easing-standard);
+}
+.cite:hover { background: var(--cite-pill-bg-hover); }
+.cite[aria-current="true"] { background: var(--color-cite); color: var(--cite-pill-fg-active); border-color: var(--color-cite); }
+
+/* ===== 출처 패널 ===== */
+.rail { position: sticky; top: calc(var(--topbar-height) + var(--space-4)); }
+.rail-head { display: flex; align-items: baseline; gap: var(--space-2);
+  font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted); margin-bottom: var(--space-3); }
+.sources { display: flex; flex-direction: column; gap: var(--space-2); }
+.source {
+  display: block; width: 100%; text-align: left;
+  padding: var(--source-padding); padding-left: calc(var(--source-padding) + 3px);
+  background: var(--source-bg); border: 1px solid var(--source-border);
+  border-left: 3px solid transparent; border-radius: var(--source-radius);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-standard),
+              border-color var(--duration-fast) var(--easing-standard);
+}
+.source:hover { background: var(--color-surface-hover); border-color: var(--color-border-strong); border-left-color: var(--color-border-strong); }
+.source[aria-current="true"] { background: var(--source-bg-active); border-color: var(--source-border-active); border-left-color: var(--source-marker); }
+.source-n { display: inline-block; font-size: var(--font-size-xs); font-weight: var(--font-weight-bold);
+  color: var(--color-cite); margin-bottom: var(--space-1); }
+.source-agency { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.source-title { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug); margin: 2px 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.source-id { font-family: var(--font-family-mono); font-size: 11px; color: var(--color-text-subtle); }
+.excerpt { margin-top: var(--space-2); padding: var(--space-2) var(--space-3);
+  background: var(--excerpt-bg); border-left: 3px solid var(--excerpt-border-left);
+  border-radius: var(--radius-xs); color: var(--excerpt-fg);
+  font-size: var(--excerpt-font-size); line-height: var(--excerpt-line-height); }
+
+/* ===== ProgressSteps ===== */
+.steps { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-2) 0 var(--space-5); }
+.step { display: flex; align-items: center; gap: var(--space-3); font-size: var(--step-font-size); color: var(--color-text-subtle); }
+.step-dot { width: var(--step-dot-size); height: var(--step-dot-size); border-radius: var(--radius-full);
+  background: var(--step-dot-idle); flex: none; }
+.step-active { color: var(--color-text); font-weight: var(--font-weight-medium); }
+.step-active .step-dot { background: var(--step-dot-active); animation: pulse 1.2s var(--easing-standard) infinite; }
+.step-done { color: var(--color-text-muted); }
+.step-done .step-dot { background: var(--step-dot-done); }
+@keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
+
+/* ===== 입력창 ===== */
+.ask { display: flex; gap: var(--space-2); margin-top: var(--space-6);
+  padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
+.ask .input { flex: 1; }
+
+/* ===== 토큰 갤러리 ===== */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--space-3); }
+.sw { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; background: var(--color-surface); }
+.sw-chip { height: 52px; }
+.sw-name { padding: var(--space-2) var(--space-3); font-family: var(--font-family-mono); font-size: 11px; color: var(--color-text-muted); }
+.type-row { display: flex; align-items: baseline; gap: var(--space-4); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border-subtle); }
+.type-tag { width: 180px; flex: none; font-family: var(--font-family-mono); font-size: var(--font-size-xs); color: var(--color-text-subtle); }
+.gallery-row { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; padding: var(--space-3) 0; }
+</style>
+</head>
+<body>
+
+<div class="pv-bar">
+  <span class="pv-title">DESIGN PREVIEW</span>
+  <div class="pv-seg" id="viewSeg">
+    <button data-view="search" aria-pressed="true">검색 화면</button>
+    <button data-view="notice" aria-pressed="false">질의응답 화면</button>
+    <button data-view="tokens" aria-pressed="false">토큰</button>
+    <button data-view="components" aria-pressed="false">컴포넌트</button>
+  </div>
+  <div class="pv-seg" id="stateSeg"></div>
+  <div class="pv-spacer"></div>
+  <button class="btn btn-secondary btn-sm" id="themeBtn">☾ 다크</button>
+</div>
+
+<div class="pv-stage">
+
+<!-- ══════════════════ 검색 화면 ══════════════════ -->
+<section class="pv-frame" data-view="search">
+  <div class="app">
+    <div class="topbar">
+      <span class="brand"><span class="brand-mark">B</span> 입찰메이트 RFP</span>
+      <div class="pv-spacer"></div>
+      <select class="select" style="height:32px"><option>gpt-5-mini</option><option>gpt-5-nano</option></select>
+    </div>
+
+    <div class="hero">
+      <h1>어떤 사업을 찾으세요?</h1>
+      <p>나라장터 공고를 자연어로 찾습니다</p>
+      <div class="searchbar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input value="클라우드 전환 사업" aria-label="검색어">
+        <button class="btn btn-primary btn-lg" id="searchBtn">찾기</button>
+      </div>
+      <div class="examples">
+        <button class="chip">장애인 접근성 개선</button>
+        <button class="chip">이러닝 시스템 운영</button>
+        <button class="chip">관제 시스템 고도화</button>
+      </div>
+    </div>
+
+    <div class="results">
+      <div class="filterbar" data-when="loading results empty error">
+        <button class="chip" aria-pressed="true">예산 3억 이상 <span class="chip-x">×</span></button>
+        <button class="chip">발주기관</button>
+        <button class="chip">마감일 이후</button>
+        <div class="pv-spacer"></div>
+        <button class="btn btn-ghost btn-sm">필터 초기화</button>
+      </div>
+
+      <!-- idle -->
+      <div data-when="idle" class="empty">
+        <div class="empty-icon">⌕</div>
+        <h3>찾고 싶은 사업을 적어보세요</h3>
+        <p>"클라우드 전환", "장애인 접근성 개선" 같이 자연어로 씁니다.</p>
+      </div>
+
+      <!-- loading -->
+      <div data-when="loading">
+        <div class="result-meta"><div class="sk" style="width:120px;height:14px"></div></div>
+        <div class="cards" aria-busy="true">
+          <div class="card" style="cursor:default;pointer-events:none">
+            <div class="sk" style="width:90px;height:13px"></div>
+            <div class="sk" style="width:70%;height:20px"></div>
+            <div class="sk" style="width:45%;height:13px"></div>
+            <div class="sk" style="width:88%;height:13px"></div>
+          </div>
+          <div class="card" style="cursor:default;pointer-events:none">
+            <div class="sk" style="width:110px;height:13px"></div>
+            <div class="sk" style="width:60%;height:20px"></div>
+            <div class="sk" style="width:50%;height:13px"></div>
+            <div class="sk" style="width:76%;height:13px"></div>
+          </div>
+          <div class="card" style="cursor:default;pointer-events:none">
+            <div class="sk" style="width:80px;height:13px"></div>
+            <div class="sk" style="width:78%;height:20px"></div>
+            <div class="sk" style="width:42%;height:13px"></div>
+            <div class="sk" style="width:64%;height:13px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- results -->
+      <div data-when="results">
+        <div class="result-meta">
+          <span class="num">공고 10건 · 0.7초</span>
+          <button class="btn btn-ghost btn-sm">정렬: 관련도 ▾</button>
+        </div>
+        <div class="cards" id="cardList"></div>
+      </div>
+
+      <!-- empty -->
+      <div data-when="empty" class="empty">
+        <div class="empty-icon">⌀</div>
+        <h3>조건에 맞는 공고가 없습니다</h3>
+        <p>예산 하한 3억을 내리거나 발주기관 조건을 지워보세요.</p>
+        <button class="btn btn-secondary">필터 초기화</button>
+      </div>
+
+      <!-- error -->
+      <div data-when="error" style="padding-top:var(--space-6)">
+        <div class="alert">
+          <span aria-hidden="true">⚠</span>
+          <div>
+            <div class="alert-title">검색에 실패했습니다</div>
+            <div class="alert-body">백엔드에 닿지 못했습니다. <code>http://localhost:8088</code> 이 떠 있는지 확인하세요.</div>
+            <div style="margin-top:var(--space-3)"><button class="btn btn-secondary btn-sm">다시 시도</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ 질의응답 화면 ══════════════════ -->
+<section class="pv-frame" data-view="notice" hidden>
+  <div class="app">
+    <div class="topbar">
+      <button class="btn btn-ghost btn-sm">← 목록</button>
+      <div class="topbar-div"></div>
+      <span class="topbar-title">2024년 이러닝시스템 운영 용역</span>
+      <div class="pv-spacer"></div>
+      <select class="select" style="height:32px"><option>gpt-5-mini</option><option>gpt-5-nano</option></select>
+    </div>
+    <div class="band">
+      <b>국민연금공단</b><span class="band-dot">·</span>
+      <span class="num"><b>4억 2,000만원</b></span><span class="band-dot">·</span>
+      <span class="num">2024-04-15 마감</span>
+      <span class="badge badge-success">D-12</span>
+      <div class="pv-spacer"></div>
+      <span style="font-size:var(--font-size-xs);color:var(--color-text-subtle)">대화는 저장되지 않습니다</span>
+    </div>
+
+    <div class="qa">
+      <div class="thread">
+        <!-- idle -->
+        <div data-when="idle">
+          <div class="empty" style="padding:var(--space-12) 0;text-align:left">
+            <h3 style="margin-top:0">이 공고에 대해 물어보세요</h3>
+            <p>공고문 안에서만 찾고, 근거 문단을 함께 보여줍니다.</p>
+            <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+              <button class="chip">배정예산은?</button>
+              <button class="chip">제출 서류는?</button>
+              <button class="chip">참가 자격은?</button>
+              <button class="chip">평가 배점은?</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- asking -->
+        <div data-when="asking">
+          <h2 class="q">이 사업의 배정예산은?</h2>
+          <div class="steps">
+            <div class="step step-done"><span class="step-dot"></span> 관련 문단 검색</div>
+            <div class="step step-active"><span class="step-dot"></span> 후보 80건 다시 채점</div>
+            <div class="step"><span class="step-dot"></span> 답변 생성</div>
+          </div>
+          <div class="answer" aria-busy="true">
+            <div class="sk" style="height:15px;margin-bottom:10px"></div>
+            <div class="sk" style="height:15px;margin-bottom:10px"></div>
+            <div class="sk" style="height:15px;width:62%"></div>
+          </div>
+        </div>
+
+        <!-- answered -->
+        <div data-when="answered">
+          <h2 class="q">이 사업의 배정예산은?</h2>
+          <div class="answer" aria-live="polite" id="answerBox">
+            <p>이 사업의 배정예산은 <b class="num">420,000,000원</b>(부가가치세 포함)입니다<button class="cite" data-n="1">[1]</button>. 예산은 총 사업기간 12개월 기준으로 편성되어 있습니다.</p>
+            <p>계약 방식은 협상에 의한 계약이며, 낙찰자 결정 후 예산 범위 안에서 조정될 수 있습니다<button class="cite" data-n="2">[2]</button>. 예산 집행은 착수금 30%, 중도금 40%, 잔금 30% 로 나뉩니다<button class="cite" data-n="3">[3]</button>.</p>
+          </div>
+          <div class="answer-meta num">
+            <span>gpt-5-mini</span><span>·</span><span>3.4초</span><span>·</span><span>입력 1,240 · 출력 186 토큰</span>
+          </div>
+          <div class="ask">
+            <input class="input" placeholder="이 공고에 대해 더 물어보세요…">
+            <button class="btn btn-primary">보내기</button>
+          </div>
+        </div>
+
+        <!-- error -->
+        <div data-when="error">
+          <h2 class="q">이 사업의 배정예산은?</h2>
+          <div class="alert">
+            <span aria-hidden="true">⚠</span>
+            <div>
+              <div class="alert-title">답변을 만들지 못했습니다</div>
+              <div class="alert-body"><code>ok: false</code> — Rate limit reached for gpt-5-mini. 잠시 후 다시 시도하세요.<br>
+                상태코드는 200 입니다. 네트워크 오류가 아니라 모델 호출이 실패했습니다.</div>
+              <div style="margin-top:var(--space-3)"><button class="btn btn-secondary btn-sm">다시 시도</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- no-source -->
+        <div data-when="nosource">
+          <h2 class="q">이 사업의 하자보수 기간은?</h2>
+          <div class="alert alert-warn" style="margin-bottom:var(--space-4)">
+            <span aria-hidden="true">◇</span>
+            <div>
+              <div class="alert-title">이 답변에는 근거 문단이 없습니다</div>
+              <div class="alert-body">공고문에서 관련 문단을 찾지 못했습니다. 답변을 그대로 믿지 마세요.</div>
+            </div>
+          </div>
+          <div class="answer">
+            <p>제공된 공고문에서 하자보수 기간에 대한 조항을 찾지 못했습니다. 계약 담당 부서에 직접 확인이 필요합니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <aside class="rail" data-when="answered">
+        <div class="rail-head">출처 <span class="badge badge-info">3건</span></div>
+        <div class="sources" id="sourceList"></div>
+      </aside>
+      <aside class="rail" data-when="asking">
+        <div class="rail-head">출처</div>
+        <div class="sources">
+          <div class="source" style="cursor:default">
+            <div class="sk" style="width:60px;height:12px;margin-bottom:8px"></div>
+            <div class="sk" style="width:85%;height:14px;margin-bottom:6px"></div>
+            <div class="sk" style="width:100%;height:34px"></div>
+          </div>
+          <div class="source" style="cursor:default">
+            <div class="sk" style="width:70px;height:12px;margin-bottom:8px"></div>
+            <div class="sk" style="width:70%;height:14px;margin-bottom:6px"></div>
+            <div class="sk" style="width:100%;height:34px"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ 토큰 ══════════════════ -->
+<section class="pv-frame" data-view="tokens" hidden style="max-width:1000px">
+  <p class="pv-note">시맨틱 토큰만 보여준다. 컴포넌트는 원시값이 아니라 이 층을 참조한다.</p>
+  <div class="pv-label">표면 · 글자 · 선</div>
+  <div class="swatches" id="swSurface"></div>
+  <div class="pv-label">브랜드 · 상태</div>
+  <div class="swatches" id="swBrand"></div>
+  <div class="pv-label">출처 (제품의 핵심 색)</div>
+  <div class="swatches" id="swCite"></div>
+  <div class="pv-label">타입 스케일</div>
+  <div id="typeScale"></div>
+  <div class="pv-label">간격</div>
+  <div id="spaceScale"></div>
+  <div class="pv-label">모서리 · 그림자</div>
+  <div class="gallery-row" id="radiusRow"></div>
+</section>
+
+<!-- ══════════════════ 컴포넌트 ══════════════════ -->
+<section class="pv-frame" data-view="components" hidden style="max-width:1000px">
+  <div class="pv-label">Button — 변형 · 크기 · 상태</div>
+  <div class="gallery-row">
+    <button class="btn btn-primary">기본</button>
+    <button class="btn btn-secondary">보조</button>
+    <button class="btn btn-ghost">고스트</button>
+    <button class="btn btn-primary" disabled>비활성</button>
+    <button class="btn btn-primary" aria-busy="true"><span class="spinner"></span> 검색 중</button>
+  </div>
+  <div class="gallery-row">
+    <button class="btn btn-primary btn-sm">sm 32</button>
+    <button class="btn btn-primary">md 38</button>
+    <button class="btn btn-primary btn-lg">lg 44</button>
+  </div>
+
+  <div class="pv-label">Input</div>
+  <div class="gallery-row">
+    <input class="input" placeholder="기본">
+    <input class="input input-error" value="잘못된 값">
+    <input class="input" value="비활성" disabled>
+    <select class="select"><option>gpt-5-mini</option></select>
+  </div>
+
+  <div class="pv-label">Badge</div>
+  <div class="gallery-row">
+    <span class="badge">협상에 의한 계약</span>
+    <span class="badge badge-success">진행중</span>
+    <span class="badge badge-warning">D-5</span>
+    <span class="badge badge-danger">마감</span>
+    <span class="badge badge-info">발췌 37건</span>
+  </div>
+
+  <div class="pv-label">FilterChip</div>
+  <div class="gallery-row">
+    <button class="chip">기본</button>
+    <button class="chip" aria-pressed="true">선택됨 <span class="chip-x">×</span></button>
+    <button class="chip" disabled>비활성</button>
+  </div>
+
+  <div class="pv-label">RelevanceBar — 숫자도 순위도 붙이지 않는다</div>
+  <div class="gallery-row" style="gap:var(--space-6)">
+    <span class="relevance"><span>관련도</span><span class="relevance-track"><span class="relevance-fill" style="width:100%"></span></span></span>
+    <span class="relevance"><span>관련도</span><span class="relevance-track"><span class="relevance-fill" style="width:64%"></span></span></span>
+    <span class="relevance"><span>관련도</span><span class="relevance-track"><span class="relevance-fill" style="width:8%"></span></span></span>
+  </div>
+
+  <div class="pv-label">CitationPill — 기본 / hover / 선택 / 매칭 없음</div>
+  <div class="gallery-row">
+    <span>근거가 있습니다<button class="cite">[1]</button></span>
+    <span>선택된 상태<button class="cite" aria-current="true">[2]</button></span>
+    <span>sources 에 없는 번호는 그냥 텍스트다 [9]</span>
+  </div>
+
+  <div class="pv-label">ProgressSteps</div>
+  <div class="steps" style="max-width:320px">
+    <div class="step step-done"><span class="step-dot"></span> 관련 문단 검색</div>
+    <div class="step step-active"><span class="step-dot"></span> 후보 80건 다시 채점</div>
+    <div class="step"><span class="step-dot"></span> 답변 생성</div>
+  </div>
+
+  <div class="pv-label">Skeleton</div>
+  <div style="max-width:420px">
+    <div class="sk" style="height:15px;margin-bottom:10px"></div>
+    <div class="sk" style="height:15px;margin-bottom:10px"></div>
+    <div class="sk" style="height:15px;width:64%"></div>
+  </div>
+
+  <div class="pv-label">Excerpt — 우리가 쓴 글이 아니라는 표시</div>
+  <div class="excerpt" style="max-width:520px">…본 사업의 배정예산은 금 420,000,000원(부가가치세 포함)으로 하며, 예산의 범위 내에서 계약을 체결한다…</div>
+</section>
+
+</div>
+
+<script>
+/* ── mock 데이터 — 백엔드 없이 돌리기 위한 것. 스키마는 /search, /ask 응답과 같다. ── */
+const NOTICES = [
+  { doc_id:"20240330003-0", title:"2024년 이러닝시스템 운영 용역", agency:"국민연금공단",
+    budget:420000000, bid_close_at:"2024-04-15", dday:12, chunks:37, rel:100,
+    excerpt:"…<mark>클라우드</mark> 기반 학습관리시스템으로 전환하여 운영·유지관리를 수행한다…" },
+  { doc_id:"20240412117-0", title:"차세대 통합관제 플랫폼 클라우드 전환 및 고도화 사업", agency:"한국도로공사",
+    budget:1280000000, bid_close_at:"2024-04-22", dday:19, chunks:64, rel:81,
+    excerpt:"…기존 온프레미스 관제 시스템을 <mark>클라우드</mark>로 이관하고 이중화 구성을…" },
+  { doc_id:"20240405089-0", title:"경기도 안양시 호계체육관 배드민턴장 및 탁구장 예약시스템 구축", agency:"경기도 안양시",
+    budget:310000000, bid_close_at:"2024-04-08", dday:5, chunks:21, rel:57,
+    excerpt:"…예약·결제 모듈을 <mark>클라우드</mark> 환경에 구축하고 모바일 대응을…" },
+  { doc_id:"20240221044-0", title:"공공 데이터 개방 포털 인프라 현대화", agency:"행정안전부",
+    budget:890000000, bid_close_at:"2024-03-02", dday:-9, chunks:48, rel:34,
+    excerpt:"…노후 서버를 교체하고 <mark>클라우드</mark> 네이티브 아키텍처로 재설계…", closed:true }
+];
+const SOURCES = [
+  { n:1, doc_id:"20240330003-0", title:"2024년 이러닝시스템 운영 용역", agency:"국민연금공단",
+    chunk_id:"20240330003-0#014",
+    excerpt:"…본 사업의 배정예산은 금 420,000,000원(부가가치세 포함)으로 하며, 총 사업기간 12개월을 기준으로 편성한다…" },
+  { n:2, doc_id:"20240330003-0", title:"2024년 이러닝시스템 운영 용역", agency:"국민연금공단",
+    chunk_id:"20240330003-0#021",
+    excerpt:"…계약방식은 협상에 의한 계약으로 하며, 낙찰자 결정 이후 배정예산의 범위 내에서 계약금액을 조정할 수 있다…" },
+  { n:3, doc_id:"20240330003-0", title:"2024년 이러닝시스템 운영 용역", agency:"국민연금공단",
+    chunk_id:"20240330003-0#033",
+    excerpt:"…대가의 지급은 착수금 30퍼센트, 중도금 40퍼센트, 잔금 30퍼센트로 분할하여 지급한다…" }
+];
+
+const won = n => {
+  const 억 = Math.floor(n / 100000000), 만 = Math.floor((n % 100000000) / 10000);
+  return (억 ? 억 + "억 " : "") + (만 ? 만.toLocaleString() + "만" : "") + "원";
+};
+const el = (h) => { const t = document.createElement("template"); t.innerHTML = h.trim(); return t.content.firstElementChild; };
+
+/* ── 공고 카드 ── */
+document.getElementById("cardList").append(...NOTICES.map(x => {
+  const badge = x.closed ? '<span class="badge badge-danger">마감</span>'
+    : x.dday <= 7 ? `<span class="badge badge-warning">D-${x.dday}</span>`
+    : `<span class="badge badge-success">D-${x.dday}</span>`;
+  return el(`
+  <button class="card ${x.closed ? "card-closed" : ""}">
+    <div class="card-row">
+      <span class="card-agency">${x.agency}</span>
+      <span class="card-badges">${badge}<span class="badge">협상에 의한 계약</span></span>
+    </div>
+    <h3 class="card-title">${x.title}</h3>
+    <div class="card-meta num"><b>${won(x.budget)}</b> · ${x.bid_close_at} 마감 · 발췌 ${x.chunks}건</div>
+    <div class="card-excerpt">${x.excerpt}</div>
+    <div class="card-foot">
+      <span class="relevance" role="meter" aria-label="관련도"
+            title="이 목록 안에서의 상대적 관련도입니다. 순위가 정답 순서는 아닙니다.">
+        <span>관련도</span>
+        <span class="relevance-track"><span class="relevance-fill" style="width:${Math.max(x.rel,8)}%"></span></span>
+      </span>
+      <span class="card-cta">질문하기 →</span>
+    </div>
+  </button>`);
+}));
+
+/* ── 출처 카드 ── */
+document.getElementById("sourceList").append(...SOURCES.map(s => el(`
+  <button class="source" data-n="${s.n}" aria-label="출처 ${s.n} ${s.agency}">
+    <span class="source-n">[${s.n}]</span>
+    <div class="source-agency">${s.agency}</div>
+    <div class="source-title">${s.title}</div>
+    <div class="source-id">${s.chunk_id}</div>
+    <div class="excerpt">${s.excerpt}</div>
+  </button>`)));
+
+/* ── 인용 ↔ 출처 양방향 연결 (이 화면의 핵심) ── */
+function link(n, on) {
+  document.querySelectorAll(`.cite[data-n="${n}"], .source[data-n="${n}"]`)
+    .forEach(e => on ? e.setAttribute("aria-current", "true") : e.removeAttribute("aria-current"));
+}
+document.addEventListener("mouseover", e => { const t = e.target.closest("[data-n]"); if (t) link(t.dataset.n, true); });
+document.addEventListener("mouseout",  e => { const t = e.target.closest("[data-n]"); if (t) link(t.dataset.n, false); });
+document.addEventListener("click", e => {
+  const t = e.target.closest(".cite[data-n]");
+  if (!t) return;
+  const s = document.querySelector(`.source[data-n="${t.dataset.n}"]`);
+  if (s) s.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
+/* ── 토큰 갤러리 ── */
+const swatch = (name) => `<div class="sw"><div class="sw-chip" style="background:var(${name})"></div><div class="sw-name">${name}</div></div>`;
+document.getElementById("swSurface").innerHTML =
+  ["--color-bg","--color-surface","--color-surface-sunken","--color-border","--color-border-strong","--color-text","--color-text-muted","--color-text-subtle"].map(swatch).join("");
+document.getElementById("swBrand").innerHTML =
+  ["--color-primary","--color-primary-hover","--color-primary-subtle","--color-success","--color-success-subtle","--color-warning","--color-warning-subtle","--color-danger","--color-danger-subtle"].map(swatch).join("");
+document.getElementById("swCite").innerHTML =
+  ["--color-cite","--color-cite-bg","--color-cite-border","--color-cite-active"].map(swatch).join("");
+
+document.getElementById("typeScale").innerHTML =
+  [["--font-size-4xl","40 · 히어로"],["--font-size-3xl","32 · 화면 제목"],["--font-size-2xl","24"],
+   ["--font-size-xl","20"],["--font-size-lg","17 · 카드 제목"],["--font-size-base","15 · 본문"],
+   ["--font-size-md","14 · 조밀한 본문"],["--font-size-sm","13 · 메타"],["--font-size-xs","12 · 라벨"]]
+  .map(([t,d]) => `<div class="type-row"><span class="type-tag">${t}</span>
+    <span style="font-size:var(${t});line-height:var(--line-height-snug)">공고문 요약 ${d}</span></div>`).join("");
+
+document.getElementById("spaceScale").innerHTML =
+  ["1","2","3","4","5","6","8","10","12","16"].map(n =>
+    `<div class="type-row"><span class="type-tag">--space-${n}</span>
+     <span style="height:12px;width:var(--space-${n});background:var(--color-primary);border-radius:2px;display:inline-block"></span></div>`).join("");
+
+document.getElementById("radiusRow").innerHTML =
+  [["--radius-sm","--shadow-xs"],["--radius-md","--shadow-sm"],["--radius-lg","--shadow-md"],["--radius-xl","--shadow-lg"]]
+  .map(([r,s]) => `<div style="width:120px;height:72px;background:var(--color-surface);border:1px solid var(--color-border);
+     border-radius:var(${r});box-shadow:var(${s});display:grid;place-items:center;
+     font-family:var(--font-family-mono);font-size:10px;color:var(--color-text-subtle);text-align:center">${r}<br>${s}</div>`).join("");
+
+/* ── 프리뷰 전환 ── */
+const STATES = {
+  search: [["results","결과"],["idle","첫 진입"],["loading","로딩"],["empty","빈 결과"],["error","오류"]],
+  notice: [["answered","답변"],["idle","첫 진입"],["asking","생성 중"],["error","오류"],["nosource","근거 없음"]],
+  tokens: [], components: []
+};
+let view = "search";
+const stateSeg = document.getElementById("stateSeg");
+
+function applyState(v, s) {
+  document.querySelectorAll(`section[data-view="${v}"] [data-when]`).forEach(n =>
+    n.hidden = !n.dataset.when.split(" ").includes(s));
+}
+function setView(v) {
+  view = v;
+  document.querySelectorAll("#viewSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === v));
+  document.querySelectorAll("section[data-view]").forEach(s => s.hidden = s.dataset.view !== v);
+  const st = STATES[v];
+  stateSeg.hidden = !st.length;
+  stateSeg.innerHTML = st.map(([k, l], i) => `<button data-state="${k}" aria-pressed="${i === 0}">${l}</button>`).join("");
+  if (st.length) applyState(v, st[0][0]);
+}
+document.getElementById("viewSeg").onclick = e => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); };
+stateSeg.onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  stateSeg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  applyState(view, b.dataset.state);
+};
+
+/* ── 테마 ── */
+const themeBtn = document.getElementById("themeBtn");
+const prefersDark = matchMedia("(prefers-color-scheme: dark)").matches;
+let dark = prefersDark;
+function paint() {
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  themeBtn.textContent = dark ? "☀ 라이트" : "☾ 다크";
+}
+themeBtn.onclick = () => { dark = !dark; paint(); };
+paint();
+
+/* ── 검색 버튼: 로딩 → 결과 (백엔드 없이 흐름을 보여주기 위한 연출) ── */
+document.getElementById("searchBtn").onclick = () => {
+  const pick = k => stateSeg.querySelector(`[data-state="${k}"]`)?.click();
+  pick("loading");
+  setTimeout(() => pick("results"), 900);
+};
+
+setView("search");
+</script>
+</body>
+</html>

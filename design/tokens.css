@@ -1,0 +1,488 @@
+/* ==========================================================================
+   입찰메이트 RFP — 디자인 토큰
+   단일 원본(single source of truth). 색·간격·글자 크기는 전부 여기서 나온다.
+   컴포넌트 CSS 에 hex 나 px 를 직접 쓰지 말 것 — var() 로만 참조한다.
+
+   3계층:
+     PRIMITIVE  원시값. 거의 안 바꾼다.
+     SEMANTIC   쓰임새 별칭. 테마를 바꾸는 층이 여기다.
+     COMPONENT  컴포넌트 전용. 한 컴포넌트만 손볼 때 여기를 바꾼다.
+   ========================================================================== */
+
+/* === PRIMITIVE ========================================================== */
+:root {
+  /* --- 중립 (slate) --- */
+  --color-slate-50:  #F8FAFC;
+  --color-slate-100: #F1F5F9;
+  --color-slate-200: #E2E8F0;
+  --color-slate-300: #CBD5E1;
+  --color-slate-400: #94A3B8;
+  --color-slate-500: #64748B;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1E293B;
+  --color-slate-900: #0F172A;
+  --color-slate-950: #020617;
+
+  /* --- 브랜드 (indigo) --- */
+  --color-indigo-50:  #EEF2FF;
+  --color-indigo-100: #E0E7FF;
+  --color-indigo-200: #C7D2FE;
+  --color-indigo-300: #A5B4FC;
+  --color-indigo-400: #818CF8;
+  --color-indigo-500: #6366F1;
+  --color-indigo-600: #4F46E5;
+  --color-indigo-700: #4338CA;
+  --color-indigo-900: #312E81;
+
+  /* --- 상태 --- */
+  --color-emerald-50:  #ECFDF5;
+  --color-emerald-300: #6EE7B7;
+  --color-emerald-500: #10B981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-emerald-900: #064E3B;
+
+  --color-amber-50:  #FFFBEB;
+  --color-amber-300: #FCD34D;
+  --color-amber-500: #F59E0B;
+  --color-amber-600: #D97706;
+  --color-amber-700: #B45309;
+  --color-amber-900: #78350F;
+
+  --color-rose-50:  #FFF1F2;
+  --color-rose-300: #FDA4AF;
+  --color-rose-500: #F43F5E;
+  --color-rose-600: #E11D48;
+  --color-rose-700: #BE123C;
+  --color-rose-900: #881337;
+
+  /* --- 출처/인용 (sky — 브랜드와 겹치지 않게 따로 뽑았다) --- */
+  --color-sky-50:  #F0F9FF;
+  --color-sky-100: #E0F2FE;
+  --color-sky-200: #BAE6FD;
+  --color-sky-300: #7DD3FC;
+  --color-sky-500: #0EA5E9;
+  --color-sky-600: #0284C7;
+  --color-sky-700: #0369A1;
+  --color-sky-900: #0C4A6E;
+
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+
+  /* --- 간격 (4px 기준) --- */
+  --space-0:  0;
+  --space-1:  0.25rem;   /*  4px */
+  --space-2:  0.5rem;    /*  8px */
+  --space-3:  0.75rem;   /* 12px */
+  --space-4:  1rem;      /* 16px */
+  --space-5:  1.25rem;   /* 20px */
+  --space-6:  1.5rem;    /* 24px */
+  --space-8:  2rem;      /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+  --space-16: 4rem;      /* 64px */
+  --space-20: 5rem;      /* 80px */
+
+  /* --- 글자 크기 --- */
+  --font-size-xs:   0.75rem;    /* 12px */
+  --font-size-sm:   0.8125rem;  /* 13px — 메타/라벨 */
+  --font-size-md:   0.875rem;   /* 14px — 조밀한 본문 */
+  --font-size-base: 0.9375rem;  /* 15px — 기본 본문 */
+  --font-size-lg:   1.0625rem;  /* 17px */
+  --font-size-xl:   1.25rem;    /* 20px */
+  --font-size-2xl:  1.5rem;     /* 24px */
+  --font-size-3xl:  2rem;       /* 32px */
+  --font-size-4xl:  2.5rem;     /* 40px */
+
+  /* --- 행간 — 한글은 라틴보다 넉넉해야 읽힌다 --- */
+  --line-height-tight:  1.3;   /* 큰 제목 전용 */
+  --line-height-snug:   1.45;  /* 카드 제목, 2줄짜리 */
+  --line-height-normal: 1.6;   /* UI 기본 */
+  --line-height-relaxed: 1.75; /* 답변 본문 — 여기만 특별히 넓다 */
+
+  /* --- 자간 — 한글 본문은 0, 큰 제목만 살짝 좁힌다 --- */
+  --letter-spacing-tight:  -0.02em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide:   0.02em;
+
+  /* --- 굵기 --- */
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* --- 글꼴 --- */
+  --font-family-sans: "Pretendard Variable", Pretendard, -apple-system,
+      BlinkMacSystemFont, "Apple SD Gothic Neo", system-ui, "Segoe UI",
+      "Malgun Gothic", sans-serif;
+  --font-family-mono: "JetBrains Mono", ui-monospace, SFMono-Regular,
+      "SF Mono", Menlo, Consolas, monospace;
+
+  /* --- 모서리 --- */
+  --radius-xs:   0.25rem;
+  --radius-sm:   0.375rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-2xl:  1.25rem;
+  --radius-full: 9999px;
+
+  /* --- 그림자 --- */
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.07), 0 1px 2px -1px rgb(15 23 42 / 0.05);
+  --shadow-md: 0 4px 12px -2px rgb(15 23 42 / 0.09), 0 2px 4px -2px rgb(15 23 42 / 0.05);
+  --shadow-lg: 0 12px 28px -6px rgb(15 23 42 / 0.14), 0 4px 8px -4px rgb(15 23 42 / 0.06);
+
+  /* --- 시간 --- */
+  --duration-fast:   150ms;
+  --duration-normal: 200ms;
+  --duration-slow:   320ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0.2, 1);
+  --easing-out:      cubic-bezier(0, 0, 0.2, 1);
+
+  /* --- 레이어 --- */
+  --z-base:     0;
+  --z-sticky:   100;
+  --z-dropdown: 200;
+  --z-overlay:  300;
+  --z-toast:    400;
+}
+
+/* === SEMANTIC =========================================================== */
+/* 테마를 바꿀 때 건드리는 층. 컴포넌트는 원시값이 아니라 여기를 본다. */
+:root {
+  /* --- 표면 --- */
+  --color-bg:              var(--color-slate-50);   /* 페이지 바닥 */
+  --color-surface:         var(--color-white);      /* 카드·패널 */
+  --color-surface-sunken:  var(--color-slate-100);  /* 입력창, 코드, 인용 발췌 */
+  --color-surface-raised:  var(--color-white);      /* 드롭다운·모달 (그림자로 띄운다) */
+  --color-surface-hover:   var(--color-slate-100);
+  --color-overlay:         rgb(15 23 42 / 0.45);
+
+  /* --- 글자 --- */
+  --color-text:         var(--color-slate-900);
+  --color-text-muted:   var(--color-slate-600);  /* 메타 정보 */
+  --color-text-subtle:  var(--color-slate-400);  /* 라벨, 보조 */
+  --color-text-inverse: var(--color-white);
+  --color-text-link:    var(--color-indigo-600);
+
+  /* --- 선 --- */
+  --color-border:        var(--color-slate-200);
+  --color-border-strong: var(--color-slate-300);
+  --color-border-subtle: var(--color-slate-100);
+
+  /* --- 브랜드 --- */
+  --color-primary:         var(--color-indigo-600);
+  --color-primary-hover:   var(--color-indigo-700);
+  --color-primary-active:  var(--color-indigo-900);
+  --color-primary-subtle:  var(--color-indigo-50);
+  --color-primary-border:  var(--color-indigo-200);
+  --color-primary-fg:      var(--color-white);   /* primary 를 배경으로 쓸 때 얹는 글자 */
+  /* primary 를 배경 없이 '글자'로 쓸 때. 다크에서 값이 갈린다 — 채움색과 글자색은 다른 토큰이다 */
+  --color-primary-subtle-fg: var(--color-indigo-700);
+
+  /* --- 상태 --- */
+  /* -600 이 아니라 -700 이다. -600 은 제 subtle 배경 위에서 3.1~4.3:1 밖에 안 나와 AA 를 못 넘는다. */
+  --color-success:        var(--color-emerald-700);
+  --color-success-subtle: var(--color-emerald-50);
+  --color-warning:        var(--color-amber-700);
+  --color-warning-subtle: var(--color-amber-50);
+  --color-danger:         var(--color-rose-700);
+  --color-danger-subtle:  var(--color-rose-50);
+  --color-info:           var(--color-sky-700);
+  --color-info-subtle:    var(--color-sky-50);
+
+  /* --- 출처/인용 — 이 제품의 핵심이라 색을 따로 잡았다 --- */
+  --color-cite:         var(--color-sky-700);
+  --color-cite-bg:      var(--color-sky-50);
+  --color-cite-border:  var(--color-sky-200);
+  --color-cite-active:  var(--color-sky-100);  /* 인용을 짚었을 때 출처 카드가 켜지는 색 */
+
+  /* --- 포커스 링 --- */
+  --focus-ring-color:  var(--color-indigo-500);
+  --focus-ring-width:  2px;
+  --focus-ring-offset: 2px;
+
+  /* --- 간격 별칭 --- */
+  --space-gap-tight:   var(--space-2);   /* 뱃지 사이 */
+  --space-gap:         var(--space-3);   /* 기본 요소 사이 */
+  --space-gap-loose:   var(--space-6);   /* 카드 사이 */
+  --space-block:       var(--space-8);   /* 블록 사이 */
+  --space-section:     var(--space-12);  /* 섹션 사이 */
+  --layout-gutter:     var(--space-6);   /* 화면 좌우 여백 */
+  --layout-max-width:  1240px;
+  --layout-topbar-h:   56px;
+  --layout-rail-w:     280px;            /* 출처 패널 */
+}
+
+/* === COMPONENT ========================================================== */
+:root {
+  /* --- Button --- */
+  --button-height-sm: 32px;
+  --button-height-md: 38px;
+  --button-height-lg: 44px;
+  --button-padding-x: var(--space-4);
+  --button-radius:    var(--radius-md);
+  --button-font-size: var(--font-size-md);
+  --button-font-weight: var(--font-weight-medium);
+
+  --button-primary-bg:        var(--color-primary);
+  --button-primary-bg-hover:  var(--color-primary-hover);
+  --button-primary-bg-active: var(--color-primary-active);
+  --button-primary-fg:        var(--color-primary-fg);
+
+  --button-secondary-bg:       var(--color-surface);
+  --button-secondary-bg-hover: var(--color-surface-hover);
+  --button-secondary-fg:       var(--color-text);
+  --button-secondary-border:   var(--color-border-strong);
+
+  --button-ghost-bg-hover: var(--color-surface-hover);
+  --button-ghost-fg:       var(--color-text-muted);
+
+  --button-disabled-bg: var(--color-slate-200);
+  --button-disabled-fg: var(--color-text-subtle);
+
+  /* --- Input / Select --- */
+  --input-height:       38px;
+  --input-bg:           var(--color-surface);
+  --input-fg:           var(--color-text);
+  --input-placeholder:  var(--color-text-subtle);
+  --input-border:       var(--color-border-strong);
+  --input-border-hover: var(--color-slate-400);
+  --input-border-focus: var(--color-primary);
+  --input-radius:       var(--radius-md);
+  --input-padding-x:    var(--space-3);
+  --input-font-size:    var(--font-size-md);
+
+  /* --- SearchBar (홈의 주인공. 일반 input 보다 크다) --- */
+  --searchbar-height:      56px;
+  --searchbar-bg:          var(--color-surface);
+  --searchbar-border:      var(--color-border);
+  --searchbar-radius:      var(--radius-xl);
+  --searchbar-shadow:      var(--shadow-sm);
+  --searchbar-shadow-focus: var(--shadow-md);
+  --searchbar-font-size:   var(--font-size-lg);
+  --searchbar-padding-x:   var(--space-5);
+
+  /* --- Card (공고 카드) --- */
+  --card-bg:           var(--color-surface);
+  --card-bg-hover:     var(--color-surface);
+  --card-border:       var(--color-border);
+  --card-border-hover: var(--color-border-strong);
+  --card-radius:       var(--radius-lg);
+  --card-padding:      var(--space-5);
+  --card-gap:          var(--space-3);
+  --card-shadow:       var(--shadow-xs);
+  --card-shadow-hover: var(--shadow-md);
+
+  /* --- Badge --- */
+  --badge-height:      22px;
+  --badge-padding-x:   var(--space-2);
+  --badge-radius:      var(--radius-sm);
+  --badge-font-size:   var(--font-size-xs);
+  --badge-font-weight: var(--font-weight-medium);
+
+  /* --- FilterChip --- */
+  --chip-height:        30px;
+  --chip-padding-x:     var(--space-3);
+  --chip-radius:        var(--radius-full);
+  --chip-bg:            var(--color-surface);
+  --chip-bg-hover:      var(--color-surface-hover);
+  --chip-bg-selected:   var(--color-primary-subtle);
+  --chip-border:        var(--color-border);
+  --chip-border-selected: var(--color-primary-border);
+  --chip-fg:            var(--color-text-muted);
+  --chip-fg-selected:   var(--color-primary-subtle-fg);
+  --chip-font-size:     var(--font-size-sm);
+
+  /* --- RelevanceBar (순위 대신 쓰는 관련도 막대) --- */
+  --relevance-track: var(--color-slate-200);
+  --relevance-fill:  var(--color-indigo-400);
+  --relevance-height: 4px;
+  --relevance-width:  56px;
+  --relevance-radius: var(--radius-full);
+
+  /* --- CitationPill (답변 안의 [1]) --- */
+  --cite-pill-bg:         var(--color-cite-bg);
+  --cite-pill-bg-hover:   var(--color-cite-active);
+  --cite-pill-fg:         var(--color-cite);
+  --cite-pill-fg-active:  var(--color-white);  /* 배경이 --color-cite 로 채워졌을 때 */
+  --cite-pill-border:     var(--color-cite-border);
+  --cite-pill-radius:     var(--radius-xs);
+  --cite-pill-font-size:  var(--font-size-xs);
+  --cite-pill-padding-x:  var(--space-1);
+
+  /* --- SourceCard (우측 출처 패널의 항목) --- */
+  --source-bg:           var(--color-surface);
+  --source-bg-active:    var(--color-cite-bg);
+  --source-border:       var(--color-border);
+  --source-border-active: var(--color-cite-border);
+  --source-radius:       var(--radius-md);
+  --source-padding:      var(--space-3);
+  --source-marker:       var(--color-cite);
+
+  /* --- ProgressSteps (3~5초를 설명하는 단계 표시) --- */
+  --step-dot-size:      8px;
+  --step-dot-idle:      var(--color-slate-300);
+  --step-dot-active:    var(--color-primary);
+  --step-dot-done:      var(--color-success);
+  --step-line:          var(--color-border);
+  --step-font-size:     var(--font-size-sm);
+
+  /* --- Skeleton --- */
+  --skeleton-bg:        var(--color-slate-200);
+  --skeleton-highlight: var(--color-slate-100);
+  --skeleton-radius:    var(--radius-sm);
+  --skeleton-duration:  1.4s;
+
+  /* --- Answer (답변 본문) --- */
+  --answer-bg:          var(--color-surface);
+  --answer-border:      var(--color-border);
+  --answer-radius:      var(--radius-lg);
+  --answer-padding:     var(--space-6);
+  --answer-font-size:   var(--font-size-base);
+  --answer-line-height: var(--line-height-relaxed);
+  --answer-max-width:   68ch;   /* 한글 기준 한 줄 40~45자 */
+
+  /* --- Excerpt (원문 발췌 — 우리가 쓴 글이 아니라는 표시) --- */
+  --excerpt-bg:         var(--color-surface-sunken);
+  --excerpt-border-left: var(--color-cite-border);
+  --excerpt-fg:         var(--color-text-muted);
+  --excerpt-font-size:  var(--font-size-sm);
+  --excerpt-line-height: var(--line-height-normal);
+
+  /* --- Topbar --- */
+  --topbar-bg:      var(--color-surface);
+  --topbar-border:  var(--color-border);
+  --topbar-height:  var(--layout-topbar-h);
+
+  /* --- EmptyState --- */
+  --empty-fg:        var(--color-text-subtle);
+  --empty-icon-size: 40px;
+  --empty-padding:   var(--space-16);
+}
+
+/* === DARK =============================================================== */
+/* 시맨틱만 덮어쓴다. 컴포넌트 토큰은 손대지 않는다 — 그게 이 구조의 이유다. */
+:root[data-theme="dark"] {
+  --color-bg:             var(--color-slate-950);
+  --color-surface:        var(--color-slate-900);
+  --color-surface-sunken: var(--color-slate-800);
+  --color-surface-raised: var(--color-slate-800);
+  --color-surface-hover:  var(--color-slate-800);
+  --color-overlay:        rgb(2 6 23 / 0.65);
+
+  --color-text:        var(--color-slate-100);
+  --color-text-muted:  var(--color-slate-400);
+  --color-text-subtle: var(--color-slate-500);
+  --color-text-inverse: var(--color-slate-950);
+  --color-text-link:   var(--color-indigo-400);
+
+  --color-border:        var(--color-slate-800);
+  --color-border-strong: var(--color-slate-700);
+  --color-border-subtle: var(--color-slate-800);
+
+  /* 채움색은 라이트와 같다 — indigo-500 위의 흰 글자는 4.46:1 로 AA 를 못 넘는다 */
+  --color-primary:        var(--color-indigo-600);
+  --color-primary-hover:  var(--color-indigo-500);
+  --color-primary-active: var(--color-indigo-700);
+  --color-primary-subtle: var(--color-indigo-900);
+  --color-primary-border: var(--color-indigo-700);
+  --color-primary-subtle-fg: var(--color-indigo-200);
+  --color-primary-fg:     var(--color-white);
+
+  --color-success-subtle: var(--color-emerald-900);
+  --color-warning-subtle: var(--color-amber-900);
+  --color-danger-subtle:  var(--color-rose-900);
+  --color-info-subtle:    var(--color-sky-900);
+  /* 어두운 바탕에서는 -300 단계라야 읽힌다 */
+  --color-success: var(--color-emerald-300);
+  --color-warning: var(--color-amber-300);
+  --color-danger:  var(--color-rose-300);
+  --color-info:    var(--color-sky-300);
+
+  --color-cite:        var(--color-sky-300);
+  --cite-pill-fg-active: var(--color-slate-950);
+  --color-cite-bg:     var(--color-sky-900);
+  --color-cite-border: var(--color-sky-600);
+  --color-cite-active: var(--color-sky-600);
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.5);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.55);
+  --shadow-lg: 0 12px 28px -6px rgb(0 0 0 / 0.6);
+
+  --button-disabled-bg: var(--color-slate-800);
+  --relevance-track: var(--color-slate-700);
+  --relevance-fill:  var(--color-indigo-500);
+  --skeleton-bg:        var(--color-slate-800);
+  --skeleton-highlight: var(--color-slate-700);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg:             var(--color-slate-950);
+    --color-surface:        var(--color-slate-900);
+    --color-surface-sunken: var(--color-slate-800);
+    --color-surface-raised: var(--color-slate-800);
+    --color-surface-hover:  var(--color-slate-800);
+    --color-overlay:        rgb(2 6 23 / 0.65);
+
+    --color-text:        var(--color-slate-100);
+    --color-text-muted:  var(--color-slate-400);
+    --color-text-subtle: var(--color-slate-500);
+    --color-text-inverse: var(--color-slate-950);
+    --color-text-link:   var(--color-indigo-400);
+
+    --color-border:        var(--color-slate-800);
+    --color-border-strong: var(--color-slate-700);
+    --color-border-subtle: var(--color-slate-800);
+
+    /* 채움색은 라이트와 같다 — indigo-500 위의 흰 글자는 4.46:1 로 AA 를 못 넘는다 */
+    --color-primary:        var(--color-indigo-600);
+    --color-primary-hover:  var(--color-indigo-500);
+    --color-primary-active: var(--color-indigo-700);
+    --color-primary-subtle: var(--color-indigo-900);
+    --color-primary-border: var(--color-indigo-700);
+    --color-primary-subtle-fg: var(--color-indigo-200);
+
+    --color-success-subtle: var(--color-emerald-900);
+    --color-warning-subtle: var(--color-amber-900);
+    --color-danger-subtle:  var(--color-rose-900);
+    --color-info-subtle:    var(--color-sky-900);
+    /* 어두운 바탕에서는 -300 단계라야 읽힌다 */
+    --color-success: var(--color-emerald-300);
+    --color-warning: var(--color-amber-300);
+    --color-danger:  var(--color-rose-300);
+    --color-info:    var(--color-sky-300);
+
+    --color-cite:        var(--color-sky-300);
+    --cite-pill-fg-active: var(--color-slate-950);
+    --color-cite-bg:     var(--color-sky-900);
+    --color-cite-border: var(--color-sky-600);
+    --color-cite-active: var(--color-sky-600);
+
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.5);
+    --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.55);
+    --shadow-lg: 0 12px 28px -6px rgb(0 0 0 / 0.6);
+
+    --button-disabled-bg: var(--color-slate-800);
+    --relevance-track: var(--color-slate-700);
+    --relevance-fill:  var(--color-indigo-500);
+    --skeleton-bg:        var(--color-slate-800);
+    --skeleton-highlight: var(--color-slate-700);
+  }
+}
+
+/* === 접근성 ============================================================= */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 1ms;
+    --duration-normal: 1ms;
+    --duration-slow: 1ms;
+    --skeleton-duration: 0s;
+  }
+}
