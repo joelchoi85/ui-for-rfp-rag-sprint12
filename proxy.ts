@@ -1,4 +1,4 @@
-export function middleware(req: Request) {
+export function proxy(req: Request) {
   const auth = req.headers.get("authorization");
   const want = "Basic " + btoa(process.env.BASIC_AUTH!);
   if (auth !== want)
