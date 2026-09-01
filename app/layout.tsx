@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "입찰메이트 RFP",
+  title: "NLP of Legend",
   description: "나라장터 입찰공고를 자연어로 찾고, 고른 공고에 대해 근거와 함께 묻는다.",
 };
 

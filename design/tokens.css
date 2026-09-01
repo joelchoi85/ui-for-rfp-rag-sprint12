@@ -1,5 +1,5 @@
 /* ==========================================================================
-   입찰메이트 RFP — 디자인 토큰
+   NLP of Legend — 디자인 토큰
    단일 원본(single source of truth). 색·간격·글자 크기는 전부 여기서 나온다.
    컴포넌트 CSS 에 hex 나 px 를 직접 쓰지 말 것 — var() 로만 참조한다.
 
@@ -24,16 +24,16 @@
   --color-slate-900: #0F172A;
   --color-slate-950: #020617;
 
-  /* --- 브랜드 (indigo) --- */
-  --color-indigo-50:  #EEF2FF;
-  --color-indigo-100: #E0E7FF;
-  --color-indigo-200: #C7D2FE;
-  --color-indigo-300: #A5B4FC;
-  --color-indigo-400: #818CF8;
-  --color-indigo-500: #6366F1;
-  --color-indigo-600: #4F46E5;
-  --color-indigo-700: #4338CA;
-  --color-indigo-900: #312E81;
+  /* --- 브랜드 (violet) — 600 은 로고에서 뽑은 값이다. 나머지는 그 색상각(271°)으로 만든 단계 --- */
+  --color-violet-50:  #F8F0FF;
+  --color-violet-100: #F0E0FF;
+  --color-violet-200: #DFBEFD;
+  --color-violet-300: #C994F9;
+  --color-violet-400: #B068F3;
+  --color-violet-500: #9025F4;
+  --color-violet-600: #6500C3;
+  --color-violet-700: #52009E;
+  --color-violet-900: #32075A;
 
   /* --- 상태 --- */
   --color-emerald-50:  #ECFDF5;
@@ -166,7 +166,7 @@
   --color-text-muted:   var(--color-slate-600);  /* 메타 정보 */
   --color-text-subtle:  var(--color-slate-400);  /* 라벨, 보조 */
   --color-text-inverse: var(--color-white);
-  --color-text-link:    var(--color-indigo-600);
+  --color-text-link:    var(--color-violet-600);
 
   /* --- 선 --- */
   --color-border:        var(--color-slate-200);
@@ -174,14 +174,14 @@
   --color-border-subtle: var(--color-slate-100);
 
   /* --- 브랜드 --- */
-  --color-primary:         var(--color-indigo-600);
-  --color-primary-hover:   var(--color-indigo-700);
-  --color-primary-active:  var(--color-indigo-900);
-  --color-primary-subtle:  var(--color-indigo-50);
-  --color-primary-border:  var(--color-indigo-200);
+  --color-primary:         var(--color-violet-600);
+  --color-primary-hover:   var(--color-violet-700);
+  --color-primary-active:  var(--color-violet-900);
+  --color-primary-subtle:  var(--color-violet-50);
+  --color-primary-border:  var(--color-violet-200);
   --color-primary-fg:      var(--color-white);   /* primary 를 배경으로 쓸 때 얹는 글자 */
   /* primary 를 배경 없이 '글자'로 쓸 때. 다크에서 값이 갈린다 — 채움색과 글자색은 다른 토큰이다 */
-  --color-primary-subtle-fg: var(--color-indigo-700);
+  --color-primary-subtle-fg: var(--color-violet-700);
 
   /* --- 상태 --- */
   /* -600 이 아니라 -700 이다. -600 은 제 subtle 배경 위에서 3.1~4.3:1 밖에 안 나와 AA 를 못 넘는다. */
@@ -201,7 +201,7 @@
   --color-cite-active:  var(--color-sky-100);  /* 인용을 짚었을 때 출처 카드가 켜지는 색 */
 
   /* --- 포커스 링 --- */
-  --focus-ring-color:  var(--color-indigo-500);
+  --focus-ring-color:  var(--color-violet-600);
   --focus-ring-width:  2px;
   --focus-ring-offset: 2px;
 
@@ -299,7 +299,7 @@
 
   /* --- RelevanceBar (순위 대신 쓰는 관련도 막대) --- */
   --relevance-track: var(--color-slate-200);
-  --relevance-fill:  var(--color-indigo-400);
+  --relevance-fill:  var(--color-violet-500);   /* 400 은 track 대비 2.78:1 로 안 보인다 */
   --relevance-height: 4px;
   --relevance-width:  56px;
   --relevance-radius: var(--radius-full);
@@ -378,19 +378,20 @@
   --color-text-muted:  var(--color-slate-400);
   --color-text-subtle: var(--color-slate-500);
   --color-text-inverse: var(--color-slate-950);
-  --color-text-link:   var(--color-indigo-400);
+  --color-text-link:   var(--color-violet-300);
 
   --color-border:        var(--color-slate-800);
   --color-border-strong: var(--color-slate-700);
   --color-border-subtle: var(--color-slate-800);
 
-  /* 채움색은 라이트와 같다 — indigo-500 위의 흰 글자는 4.46:1 로 AA 를 못 넘는다 */
-  --color-primary:        var(--color-indigo-600);
-  --color-primary-hover:  var(--color-indigo-500);
-  --color-primary-active: var(--color-indigo-700);
-  --color-primary-subtle: var(--color-indigo-900);
-  --color-primary-border: var(--color-indigo-700);
-  --color-primary-subtle-fg: var(--color-indigo-200);
+  /* 라이트의 600 은 어두운 바탕에서 경계가 1.99:1 이라 배경에 녹는다. 한 단계 밝게. */
+  --color-primary:        var(--color-violet-500);
+  --color-primary-hover:  var(--color-violet-400);
+  --color-primary-active: var(--color-violet-600);
+  --color-primary-subtle: var(--color-violet-900);
+  --color-primary-border: var(--color-violet-700);
+  --color-primary-subtle-fg: var(--color-violet-200);
+  --focus-ring-color: var(--color-violet-400);   /* 600 은 검은 바탕에서 2.25:1 */
   --color-primary-fg:     var(--color-white);
 
   --color-success-subtle: var(--color-emerald-900);
@@ -416,7 +417,7 @@
 
   --button-disabled-bg: var(--color-slate-800);
   --relevance-track: var(--color-slate-700);
-  --relevance-fill:  var(--color-indigo-500);
+  --relevance-fill:  var(--color-violet-300);
   --skeleton-bg:        var(--color-slate-800);
   --skeleton-highlight: var(--color-slate-700);
 }
@@ -434,19 +435,20 @@
     --color-text-muted:  var(--color-slate-400);
     --color-text-subtle: var(--color-slate-500);
     --color-text-inverse: var(--color-slate-950);
-    --color-text-link:   var(--color-indigo-400);
+    --color-text-link:   var(--color-violet-300);
 
     --color-border:        var(--color-slate-800);
     --color-border-strong: var(--color-slate-700);
     --color-border-subtle: var(--color-slate-800);
 
-    /* 채움색은 라이트와 같다 — indigo-500 위의 흰 글자는 4.46:1 로 AA 를 못 넘는다 */
-    --color-primary:        var(--color-indigo-600);
-    --color-primary-hover:  var(--color-indigo-500);
-    --color-primary-active: var(--color-indigo-700);
-    --color-primary-subtle: var(--color-indigo-900);
-    --color-primary-border: var(--color-indigo-700);
-    --color-primary-subtle-fg: var(--color-indigo-200);
+    /* 라이트의 600 은 어두운 바탕에서 경계가 1.99:1 이라 배경에 녹는다. 한 단계 밝게. */
+    --color-primary:        var(--color-violet-500);
+    --color-primary-hover:  var(--color-violet-400);
+    --color-primary-active: var(--color-violet-600);
+    --color-primary-subtle: var(--color-violet-900);
+    --color-primary-border: var(--color-violet-700);
+    --color-primary-subtle-fg: var(--color-violet-200);
+    --focus-ring-color: var(--color-violet-400);   /* 600 은 검은 바탕에서 2.25:1 */
 
     --color-success-subtle: var(--color-emerald-900);
     --color-warning-subtle: var(--color-amber-900);
@@ -471,7 +473,7 @@
 
     --button-disabled-bg: var(--color-slate-800);
     --relevance-track: var(--color-slate-700);
-    --relevance-fill:  var(--color-indigo-500);
+    --relevance-fill:  var(--color-violet-300);
     --skeleton-bg:        var(--color-slate-800);
     --skeleton-highlight: var(--color-slate-700);
   }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>입찰메이트 RFP — 디자인 시스템 프리뷰</title>
+<title>NLP of Legend — 디자인 시스템 프리뷰</title>
 <link rel="stylesheet" href="./tokens.css">
 <style>
 /* 이 파일에는 hex 도 px 색상값도 없다. 전부 tokens.css 의 var() 다.
@@ -75,11 +75,7 @@ button, input, select { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--topbar-border);
 }
 .brand { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--font-weight-semibold); font-size: var(--font-size-md); }
-.brand-mark {
-  width: 22px; height: 22px; border-radius: var(--radius-sm);
-  background: var(--color-primary); color: var(--color-primary-fg);
-  display: grid; place-items: center; font-size: 11px; font-weight: var(--font-weight-bold);
-}
+.brand-mark { width: 22px; height: 22px; border-radius: var(--radius-sm); }
 .topbar-title { font-size: var(--font-size-md); font-weight: var(--font-weight-medium);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .topbar-div { width: 1px; height: 18px; background: var(--color-border); }
@@ -353,7 +349,7 @@ button, input, select { font: inherit; color: inherit; }
 <section class="pv-frame" data-view="search">
   <div class="app">
     <div class="topbar">
-      <span class="brand"><span class="brand-mark">B</span> 입찰메이트 RFP</span>
+      <span class="brand"><img class="brand-mark" src="../public/logo.png" alt=""> NLP of Legend</span>
       <div class="pv-spacer"></div>
       <select class="select" style="height:32px"><option>gpt-5-mini</option><option>gpt-5-nano</option></select>
     </div>

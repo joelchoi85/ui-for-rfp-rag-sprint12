@@ -1,4 +1,4 @@
-# 입찰메이트 RFP — 웹 UI
+# NLP of Legend — RFP 웹 UI
 
 나라장터 입찰공고(RFP)를 자연어로 찾고, 고른 공고에 대해 질문하는 화면.
 검색·생성은 별도 repo(`rfp-rag-system`)의 파이썬 서비스가 하고, 여기는 화면만 한다.

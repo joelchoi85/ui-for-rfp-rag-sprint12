@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { day, dday, Notice, pick, post, won } from "./lib";
+import Image from "next/image";
 
 const EXAMPLES = ["클라우드 전환 사업", "장애인 접근성 개선", "이러닝 시스템 운영"];
 
@@ -51,7 +52,9 @@ export default function SearchPage() {
     <>
       <div className="topbar">
         <span className="brand">
-          <span className="brand-mark">B</span> 입찰메이트 RFP
+          {/* 상단바 높이가 56px 이라 60px 로고는 넘친다. 옆에 이름이 붙어 있으니 alt 는 빈 값. */}
+          <Image className="brand-mark" src="/logo.png" alt="" width={22} height={22} />
+          NLP of Legend
         </span>
       </div>
 
