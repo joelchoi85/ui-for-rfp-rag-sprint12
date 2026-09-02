@@ -173,7 +173,7 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
               <div>
                 <div className="alert-title">백엔드에 닿지 못했습니다</div>
                 <div className="alert-body">
-                  <code>{process.env.NEXT_PUBLIC_API}</code> 가 떠 있는지 확인하세요.
+                  <code>RFP_API</code> 가 가리키는 서버가 떠 있는지 확인하세요.
                   <br />
                   {failure}
                 </div>

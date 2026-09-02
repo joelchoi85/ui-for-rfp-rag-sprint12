@@ -4,8 +4,8 @@
  * 스펙 원본은 http://localhost:8088/docs 다.
  */
 
-/** .env 의 NEXT_PUBLIC_API. 빌드 시점에 번들에 박히므로 브라우저에서 닿는 주소여야 한다. */
-export const API = process.env.NEXT_PUBLIC_API ?? "http://localhost:8088";
+/** 항상 같은 오리진. 진짜 백엔드 주소는 next.config.ts 의 rewrite 가 서버 쪽에서만 안다. */
+export const API = "/api";
 
 /** `POST /search` 의 한 건. `청크수` 는 백엔드가 한글 키로 주는 그대로다. */
 export type Notice = {

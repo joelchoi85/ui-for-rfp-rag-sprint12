@@ -140,7 +140,7 @@ export default function SearchPage() {
               <div>
                 <div className="alert-title">검색에 실패했습니다</div>
                 <div className="alert-body">
-                  백엔드에 닿지 못했습니다. <code>{process.env.NEXT_PUBLIC_API}</code> 가 떠 있는지 확인하세요.
+                  백엔드에 닿지 못했습니다. <code>RFP_API</code> 가 가리키는 서버가 떠 있는지 확인하세요.
                   <br />
                   {error}
                 </div>

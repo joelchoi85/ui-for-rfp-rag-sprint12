@@ -30,8 +30,32 @@ pnpm dev
 ```
 
 ```
-NEXT_PUBLIC_API=http://localhost:8088
+RFP_API=http://localhost:8088
 ```
+
+`RFP_API` 는 **서버 쪽 변수다.** 브라우저는 언제나 같은 오리진의 `/api` 만 부르고,
+`next.config.ts` 의 rewrite 가 그걸 백엔드로 넘긴다. 그래서 백엔드 주소가 클라이언트
+번들에 안 박히고 CORS 설정도 필요 없다.
+
+## Vercel 에 올릴 때
+
+환경변수는 `RFP_API` 하나다. `NEXT_PUBLIC_` 접두사를 붙이지 말 것 —
+붙이면 VM 주소가 공개 번들에 들어간다. rewrite 는 빌드 시점에 굳으므로
+값을 바꾸면 재배포해야 한다.
+
+```
+RFP_API=http://<VM-외부IP>:8088
+```
+
+백엔드 쪽에서 해야 하는 것:
+
+- `uvicorn src.api:app --host 0.0.0.0 --port 8088` — 루프백만 듣고 있으면 못 닿는다.
+  `--reload` 는 뺀다. SSH 가 끊겨도 살아 있게 tmux 나 systemd 로 띄운다.
+- GCP 방화벽에 TCP 8088 인그레스 허용.
+- `UI_ORIGINS` 는 **안 건드려도 된다.** 프록시라 브라우저가 백엔드를 직접 안 부른다.
+
+**8088 을 열면 RFP 코퍼스가 인터넷에 공개된다.** 원본은 NDA 다. Vercel 의
+Deployment Protection 을 켜면 프록시도 그 뒤에 있으니 같이 막힌다.
 
 ## API
 
