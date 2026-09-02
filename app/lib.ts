@@ -1,7 +1,7 @@
 /**
  * 백엔드(FastAPI)와 말을 섞는 곳. 이 파일 말고는 fetch 를 쓰지 않는다.
  *
- * 스펙 원본은 http://localhost:8088/docs 다.
+ * 스펙 원본은 http://localhost:8010/docs 다.
  */
 
 /** 항상 같은 오리진. 진짜 백엔드 주소는 next.config.ts 의 rewrite 가 서버 쪽에서만 안다. */
@@ -40,7 +40,45 @@ export type Answer = {
   sources: Source[];
 };
 
-export type Model = { key: string; name: string };
+/**
+ * `GET /models` 의 한 건.
+ *
+ * `ready` 가 false 면 **고르는 순간 첫 답변이 1~2분 걸린다.** GPU 한 장에 생성
+ * 모델을 하나만 올릴 수 있어서, 다른 모델을 고르면 VM 이 컨테이너를 갈아끼운다.
+ * 화면에서 이걸 숨기면 사용자는 고장 난 줄 안다.
+ */
+export type Model = { key: string; name: string; provider: string; ready: boolean };
+
+/** `kakaocorp/kanana-1.5-8b-instruct-2505` → `kanana-1.5-8b-instruct-2505` */
+export function modelLabel(name: string): string {
+  return name.split("/").pop() ?? name;
+}
+
+const MODEL = "bidmate:model";
+
+/**
+ * 고른 모델을 화면 사이로 넘긴다. 공고를 넘기는 `pick()` 과 같은 방식이다.
+ *
+ * ponytail: sessionStorage. URL 쿼리로 하면 딥링크가 되지만 두 페이지가 전부
+ * 클라이언트 컴포넌트라 `useSearchParams` + Suspense 경계를 새로 쳐야 한다.
+ * 공고도 이미 같은 방식으로 넘기고 있어서 맞췄다.
+ */
+export function pickModel(key: string) {
+  try {
+    sessionStorage.setItem(MODEL, key);
+  } catch {
+    // 사파리 프라이빗 모드 등. 모델 기억 하나 때문에 화면이 죽으면 안 된다.
+  }
+}
+
+/** `pickModel()` 로 넘겨둔 키. 없으면 null. */
+export function pickedModel(): string | null {
+  try {
+    return sessionStorage.getItem(MODEL);
+  } catch {
+    return null;
+  }
+}
 
 /**
  * JSON POST 한 번.

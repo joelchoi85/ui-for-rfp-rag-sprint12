@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { day, dday, Notice, pick, post, won } from "./lib";
+import { ModelSelect } from "./ModelSelect";
 import Image from "next/image";
 
 const EXAMPLES = ["클라우드 전환 사업", "장애인 접근성 개선", "이러닝 시스템 운영"];
@@ -17,6 +18,8 @@ export default function SearchPage() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [error, setError] = useState("");
   const [elapsed, setElapsed] = useState(0);
+  // 검색에는 안 쓴다. 공고 화면으로 넘겨주려고 여기서 고르게 하는 것뿐이다.
+  const [model, setModel] = useState("mini");
 
   async function search(text = query) {
     if (!text.trim()) return;
@@ -56,6 +59,9 @@ export default function SearchPage() {
           <Image className="brand-mark" src="/logo.png" alt="" width={22} height={22} />
           NLP of Legend
         </span>
+        <span className="spacer" />
+        {/* 공고 화면과 같은 자리에 둔다. 자리가 옮겨 다니면 매번 다시 찾아야 한다. */}
+        <ModelSelect value={model} onChange={setModel} />
       </div>
 
       <div className="hero">

@@ -288,3 +288,17 @@ button, input, select { font: inherit; color: inherit; }
   padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
 .ask .input { flex: 1; }
 
+
+/* 오래 걸리는 이유를 설명하는 한 줄. 스켈레톤 위에 붙는다.
+   role="status" 라 스크린리더가 한 번 읽는다 — 단계표(aria-live="off")와 역할이 다르다. */
+.hint {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-info-subtle);
+  border-left: 3px solid var(--color-info);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  max-width: var(--answer-max-width);
+}
