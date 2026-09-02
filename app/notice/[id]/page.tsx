@@ -35,6 +35,13 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
   const [activeCite, setActiveCite] = useState<number | null>(null);
 
   // 목록에서 넘어왔으면 공고 정보가 sessionStorage 에 있다. 직접 열었으면 없다.
+  //
+  // 규칙(set-state-in-effect)이 잡는 건 "효과가 만드는 연쇄 렌더"인데, 여기서는
+  // 마운트 때 한 번이고 그게 **의도한 것**이다. sessionStorage 는 서버에 없으므로
+  // 첫 렌더는 서버와 똑같이 null 로 그리고(그래야 하이드레이션이 안 깨진다)
+  // 붙은 뒤에 채운다. useState 초기값이나 useMemo 로 옮기면 서버는 doc_id,
+  // 클라이언트는 제목을 그려서 하이드레이션 불일치가 난다.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setNotice(picked(id)), [id]);
 
   useEffect(() => {
