@@ -47,3 +47,6 @@ next-env.d.ts
 
 # Serena (로컬 도구 캐시)
 /.serena/
+
+# 편집 중 남는 백업본. 커밋하지 않는다.
+*.bak
