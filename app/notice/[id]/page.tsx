@@ -113,6 +113,11 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
           <span className="num">{id}</span>
         )}
         <span className="spacer" />
+        {/* 답변의 근거가 된 **그** 문서다. 나라장터 링크가 아니다 — 공고가
+            변경·재공고되면 그쪽 파일은 바뀐다. 없으면 404 라 링크만 둔다. */}
+        <a className="btn btn-secondary btn-sm" href={`/api/file/${id}`} download>
+          원문 내려받기
+        </a>
         <span style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-subtle)" }}>
           대화는 저장되지 않습니다
         </span>
