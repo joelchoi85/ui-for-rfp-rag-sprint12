@@ -4,7 +4,7 @@
 검색·생성은 별도 repo(`rfp-rag-system`)의 파이썬 서비스가 하고, 여기는 화면만 한다.
 
 ```
-Next.js (여기, :3000)  ──HTTP/JSON──▶  FastAPI (rfp-rag-system, :8088)
+Next.js (여기, :3000)  ──HTTP/JSON──▶  FastAPI (rfp-rag-system, :8010)
                                           └─ TEI 임베더/리랭커, FAISS, LLM
 ```
 
@@ -14,8 +14,8 @@ Next.js (여기, :3000)  ──HTTP/JSON──▶  FastAPI (rfp-rag-system, :808
 
 ```bash
 cd ../rfp-rag-system
-uvicorn src.api:app --reload --port 8088
-open http://localhost:8088/docs      # 스펙은 여기가 원본이다
+uvicorn src.api:app --reload --port 8010
+open http://localhost:8010/docs      # 스펙은 여기가 원본이다
 ```
 
 백엔드 담당에게 받아야 하는 것 — `.env`, TEI 도커, FAISS 인덱스.
@@ -30,7 +30,7 @@ pnpm dev
 ```
 
 ```
-RFP_API=http://localhost:8088
+RFP_API=http://localhost:8010
 ```
 
 `RFP_API` 는 **서버 쪽 변수다.** 브라우저는 언제나 같은 오리진의 `/api` 만 부르고,
@@ -44,22 +44,30 @@ RFP_API=http://localhost:8088
 값을 바꾸면 재배포해야 한다.
 
 ```
-RFP_API=http://<VM-외부IP>:8088
+RFP_API=http://<VM-외부IP>:8010
 ```
 
 백엔드 쪽에서 해야 하는 것:
 
-- `uvicorn src.api:app --host 0.0.0.0 --port 8088` — 루프백만 듣고 있으면 못 닿는다.
+- `uvicorn src.api:app --host 0.0.0.0 --port 8010` — 루프백만 듣고 있으면 못 닿는다.
   `--reload` 는 뺀다. SSH 가 끊겨도 살아 있게 tmux 나 systemd 로 띄운다.
-- GCP 방화벽에 TCP 8088 인그레스 허용.
+- 포트는 **방화벽이 이미 열어둔 것 중에서** 골라야 한다. 규칙을 못 바꾸기 때문이다.
+  현재 0.0.0.0/0 에 열린 TCP: 22, 80, 443, 8000, 8010, 8040, 8501.
+  8501 은 Streamlit 기본 포트라 피했고, 80·443 은 루트 권한이 필요하다. 그래서 8010 이다.
+  띄우기 전에 `sudo ss -tlnp` 로 비어 있는지 본다.
 - `UI_ORIGINS` 는 **안 건드려도 된다.** 프록시라 브라우저가 백엔드를 직접 안 부른다.
 
-**8088 을 열면 RFP 코퍼스가 인터넷에 공개된다.** 원본은 NDA 다. Vercel 의
-Deployment Protection 을 켜면 프록시도 그 뒤에 있으니 같이 막힌다.
+**8010 은 이미 0.0.0.0/0 에 열려 있다.** IP 를 아는 사람은 Vercel 을 거치지 않고
+백엔드를 직접 부를 수 있고, 원본 RFP 는 NDA 다. Vercel 의 Deployment Protection 은
+**Vercel 주소만** 막지 VM 의 포트는 못 막는다 — 둘을 헷갈리면 안 된다.
+
+VM 쪽까지 막으려면 FastAPI 에 공유 토큰 검사를 넣고, rewrite 대신 라우트 핸들러로
+프록시해서 서버 쪽에서 헤더를 붙여야 한다(rewrite 는 요청 헤더를 못 넣는다).
+발표용으로 잠깐 띄우는 거면 안 해도 되지만, 계속 띄워둘 거면 필요하다.
 
 ## API
 
-`http://localhost:8088/docs` 가 항상 맞다. 아래는 요약이다.
+`http://localhost:8010/docs` 가 항상 맞다. 아래는 요약이다.
 
 ### `POST /search` — 공고 찾기 (1단계)
 
@@ -92,7 +100,21 @@ Deployment Protection 을 켜면 프록시도 그 뒤에 있으니 같이 막힌
 
 ### `GET /models`
 
-드롭다운 채우는 용도. `[{ "key": "mini", "name": "gpt-5-mini" }]`
+드롭다운 채우는 용도.
+
+```json
+[{ "key": "mini", "name": "gpt-5-mini", "provider": "openai", "ready": true },
+ { "key": "kanana8b", "name": "kakaocorp/kanana-1.5-8b-instruct-2505",
+   "provider": "sglang", "ready": false }]
+```
+
+**`ready: false` 를 화면에서 숨기면 안 된다.** VM 의 GPU 한 장에 생성 모델을
+하나만 올릴 수 있어서, 안 올라와 있는 모델을 고르면 백엔드가 컨테이너를
+갈아끼운다 — 첫 답변이 1~2분(처음 받는 모델이면 더) 걸린다. `provider` 가
+`openai` 면 GPU 를 안 쓰므로 교체가 없다.
+
+모델은 **검색 화면에서** 고른다. 고른 값은 `sessionStorage` 로 공고 화면까지
+따라간다(공고를 넘기는 방식과 같다). `/ask` 의 `model` 에 그 키를 넣는다.
 
 ## 디자인
 
@@ -121,7 +143,7 @@ Deployment Protection 을 켜면 프록시도 그 뒤에 있으니 같이 막힌
   `/openapi.json` 에서 뽑는다 — 스키마를 두 벌 관리하지 않는다.
 
   ```bash
-  pnpm dlx openapi-typescript http://localhost:8088/openapi.json -o app/api-types.ts
+  pnpm dlx openapi-typescript http://localhost:8010/openapi.json -o app/api-types.ts
   ```
 
 - **시나리오 A/B 는 화면에 없다.** 인프라 선택(자체 GPU vs 외부 API)이지
