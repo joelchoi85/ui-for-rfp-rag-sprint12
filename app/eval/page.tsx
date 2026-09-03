@@ -38,6 +38,7 @@ export default function EvalPage() {
   const [uploading, setUploading] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [errorAt, setErrorAt] = useState<"업로드" | "시작">("시작");
   const router = useRouter();
 
   useEffect(() => {
@@ -66,6 +67,7 @@ export default function EvalPage() {
     if (!file) return;
     setUploading(true);
     setError("");
+    setErrorAt("업로드");
     try {
       const got = await uploadEvalSet(file);
       // 목록 맨 앞에 꽂고 바로 고른다. 올린 다음 또 골라야 하면 한 번 더 헷갈린다.
@@ -96,6 +98,7 @@ export default function EvalPage() {
   async function start() {
     setStarting(true);
     setError("");
+    setErrorAt("시작");
     try {
       const { job_id } = await post<{ job_id: string }>("/eval", {
         evalset,
@@ -225,7 +228,11 @@ export default function EvalPage() {
           {error && (
             <div className="alert">
               <div>
-                <div className="alert-title">시작하지 못했습니다</div>
+                <div className="alert-title">
+                  {errorAt === "업로드"
+                    ? "평가 세트를 받지 못했습니다"
+                    : "시작하지 못했습니다"}
+                </div>
                 <div className="alert-body">{error}</div>
               </div>
             </div>

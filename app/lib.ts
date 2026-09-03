@@ -102,7 +102,26 @@ export async function post<T>(path: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    // **서버가 말한 이유를 버리지 않는다.** 예전엔 `400 Bad Request` 만 띄웠다.
+    // 평가 세트 업로드가 거절되는 이유는 서버만 아는데(정답 문서가 코퍼스에
+    // 없다 등), 그걸 안 보여주면 화면에서는 손쓸 방법이 없다.
+    let why = "";
+    try {
+      const { detail } = await res.json();
+      why = typeof detail === "string" ? detail : (detail?.message ?? "");
+      if (detail?.unknown_count) {
+        why += ` (못 찾은 문서 ${detail.unknown_count}건: ${(
+          detail.unknown ?? []
+        )
+          .slice(0, 2)
+          .join(", ")}…)`;
+      }
+    } catch {
+      // 본문이 JSON 이 아니면 상태 줄만 쓴다
+    }
+    throw new Error(why || `${res.status} ${res.statusText}`);
+  }
   return res.json();
 }
 
