@@ -2,10 +2,24 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { Answer, day, dday, Notice, picked, post, Source, won } from "../../lib";
+import {
+  Answer,
+  day,
+  dday,
+  Notice,
+  picked,
+  post,
+  Source,
+  won,
+} from "../../lib";
 import { isCold, ModelSelect } from "../../ModelSelect";
 
-const SUGGESTED = ["배정예산은?", "제출 서류는?", "참가 자격은?", "평가 배점은?"];
+const SUGGESTED = [
+  "배정예산은?",
+  "제출 서류는?",
+  "참가 자격은?",
+  "평가 배점은?",
+];
 
 // 3~5초를 스피너 하나로 버티면 고장 난 걸로 보인다. 어느 구간인지 말한다.
 // 백엔드에 스트리밍이 없어서 실제 이벤트가 아니라 시간 기반 추정이다.
@@ -59,7 +73,9 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
     setStep(0);
     setAsking(true);
     try {
-      setAnswer(await post<Answer>("/ask", { question: text, doc_ids: [id], model }));
+      setAnswer(
+        await post<Answer>("/ask", { question: text, doc_ids: [id], model }),
+      );
       // 답이 왔으면 그 모델은 지금 올라와 있다. 드롭다운의 "교체 1~2분" 을 지운다.
       setAnswered((n) => n + 1);
     } catch (e) {
@@ -75,7 +91,11 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
   return (
     <>
       <div className="topbar">
-        <Link href="/" className="btn btn-ghost btn-sm" style={{ textDecoration: "none" }}>
+        <Link
+          href="/"
+          className="btn btn-ghost btn-sm"
+          style={{ textDecoration: "none" }}
+        >
           ← 목록
         </Link>
         <div className="topbar-div" />
@@ -106,7 +126,11 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
               (left < 0 ? (
                 <span className="badge badge-danger">마감</span>
               ) : (
-                <span className={`badge ${left <= 7 ? "badge-warning" : "badge-success"}`}>D-{left}</span>
+                <span
+                  className={`badge ${left <= 7 ? "badge-warning" : "badge-success"}`}
+                >
+                  D-{left}
+                </span>
               ))}
           </>
         ) : (
@@ -115,10 +139,19 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
         <span className="spacer" />
         {/* 답변의 근거가 된 **그** 문서다. 나라장터 링크가 아니다 — 공고가
             변경·재공고되면 그쪽 파일은 바뀐다. 없으면 404 라 링크만 둔다. */}
-        <a className="btn btn-secondary btn-sm" href={`/api/file/${id}`} download>
+        <a
+          className="btn btn-secondary btn-sm"
+          href={`/api/file/${id}`}
+          download
+        >
           원문 내려받기
         </a>
-        <span style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-subtle)" }}>
+        <span
+          style={{
+            fontSize: "var(--font-size-xs)",
+            color: "var(--color-text-subtle)",
+          }}
+        >
           대화는 저장되지 않습니다
         </span>
       </div>
@@ -127,13 +160,24 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
         <div className="thread">
           {!asked && (
             <div style={{ padding: "var(--space-12) 0" }}>
-              <h3 style={{ margin: "0 0 var(--space-2)", fontSize: "var(--font-size-lg)" }}>
+              <h3
+                style={{
+                  margin: "0 0 var(--space-2)",
+                  fontSize: "var(--font-size-lg)",
+                }}
+              >
                 이 공고에 대해 물어보세요
               </h3>
               <p style={{ color: "var(--color-text-muted)", marginTop: 0 }}>
                 공고문 안에서만 찾고, 근거 문단을 함께 보여줍니다.
               </p>
-              <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "var(--space-2)",
+                  flexWrap: "wrap",
+                }}
+              >
                 {SUGGESTED.map((text) => (
                   <button key={text} className="chip" onClick={() => ask(text)}>
                     {text}
@@ -151,7 +195,13 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                   >
                     공고 요약 보기
                   </summary>
-                  <div className="excerpt" style={{ whiteSpace: "pre-wrap", marginTop: "var(--space-3)" }}>
+                  <div
+                    className="excerpt"
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      marginTop: "var(--space-3)",
+                    }}
+                  >
                     {notice.summary}
                   </div>
                 </details>
@@ -171,7 +221,10 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                   </div>
                 ) : (
                   STEPS.map((label, i) => (
-                    <div key={label} className={`step ${i < step ? "step-done" : i === step ? "step-active" : ""}`}>
+                    <div
+                      key={label}
+                      className={`step ${i < step ? "step-done" : i === step ? "step-active" : ""}`}
+                    >
                       <span className="step-dot" />
                       {label}
                     </div>
@@ -181,9 +234,10 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
               {cold && (
                 // 몇 분짜리 기다림은 스켈레톤만으로 못 버틴다. 왜 오래 걸리는지 말한다.
                 <p className="hint" role="status">
-                  이 모델은 지금 VM 에 올라와 있지 않습니다. GPU 한 장에 생성 모델을 하나만
-                  올릴 수 있어 컨테이너를 갈아끼우는 중입니다 — 보통 1~2분, 이 모델을 처음
-                  쓰는 거면 더 걸립니다. 다음 질문부터는 바로 답합니다.
+                  이 모델은 지금 VM 에 올라와 있지 않습니다. GPU 한 장에 생성
+                  모델을 하나만 올릴 수 있어 컨테이너를 갈아끼우는 중입니다 —
+                  보통 1~2분, 이 모델을 처음 쓰는 거면 더 걸립니다. 다음
+                  질문부터는 바로 답합니다.
                 </p>
               )}
               <div className="answer" aria-busy="true">
@@ -205,7 +259,10 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                   {failure}
                 </div>
                 <div style={{ marginTop: "var(--space-3)" }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => ask(asked)}>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => ask(asked)}
+                  >
                     다시 시도
                   </button>
                 </div>
@@ -221,10 +278,14 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                 <div className="alert-body">
                   {answer.error}
                   <br />
-                  상태코드는 200 입니다. 네트워크 오류가 아니라 모델 호출이 실패했습니다.
+                  상태코드는 200 입니다. 네트워크 오류가 아니라 모델 호출이
+                  실패했습니다.
                 </div>
                 <div style={{ marginTop: "var(--space-3)" }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => ask(asked)}>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => ask(asked)}
+                  >
                     다시 시도
                   </button>
                 </div>
@@ -233,11 +294,19 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
           )}
 
           {answer?.ok && sources.length === 0 && (
-            <div className="alert alert-warn" style={{ marginBottom: "var(--space-4)" }}>
+            <div
+              className="alert alert-warn"
+              style={{ marginBottom: "var(--space-4)" }}
+            >
               <span aria-hidden="true">◇</span>
               <div>
-                <div className="alert-title">이 답변에는 근거 문단이 없습니다</div>
-                <div className="alert-body">공고문에서 관련 문단을 찾지 못했습니다. 답변을 그대로 믿지 마세요.</div>
+                <div className="alert-title">
+                  이 답변에는 근거 문단이 없습니다
+                </div>
+                <div className="alert-body">
+                  공고문에서 관련 문단을 찾지 못했습니다. 답변을 그대로 믿지
+                  마세요.
+                </div>
               </div>
             </div>
           )}
@@ -245,7 +314,12 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
           {answer?.ok && (
             <>
               <div className="answer" aria-live="polite">
-                <Cited text={answer.answer ?? ""} sources={sources} active={activeCite} onActive={setActiveCite} />
+                <Cited
+                  text={answer.answer ?? ""}
+                  sources={sources}
+                  active={activeCite}
+                  onActive={setActiveCite}
+                />
               </div>
               <div className="answer-meta num">
                 <span>{answer.model}</span>
@@ -282,7 +356,10 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
               placeholder="이 공고에 대해 물어보세요…"
               aria-label="질문"
             />
-            <button className="btn btn-primary" disabled={asking || !question.trim()}>
+            <button
+              className="btn btn-primary"
+              disabled={asking || !question.trim()}
+            >
               보내기
             </button>
           </form>
@@ -291,15 +368,31 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
         {(asking || sources.length > 0) && (
           <aside className="rail">
             <div className="rail-head">
-              출처 {sources.length > 0 && <span className="badge badge-info">{sources.length}건</span>}
+              출처{" "}
+              {sources.length > 0 && (
+                <span className="badge badge-info">{sources.length}건</span>
+              )}
             </div>
             <div className="sources">
               {asking
                 ? [0, 1].map((i) => (
-                    <div key={i} className="source" style={{ cursor: "default" }}>
-                      <div className="sk" style={{ width: 60, height: 12, marginBottom: 8 }} />
-                      <div className="sk" style={{ width: "85%", height: 14, marginBottom: 6 }} />
-                      <div className="sk" style={{ width: "100%", height: 34 }} />
+                    <div
+                      key={i}
+                      className="source"
+                      style={{ cursor: "default" }}
+                    >
+                      <div
+                        className="sk"
+                        style={{ width: 60, height: 12, marginBottom: 8 }}
+                      />
+                      <div
+                        className="sk"
+                        style={{ width: "85%", height: 14, marginBottom: 6 }}
+                      />
+                      <div
+                        className="sk"
+                        style={{ width: "100%", height: 34 }}
+                      />
                     </div>
                   ))
                 : sources.map((source) => (
@@ -318,7 +411,9 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                       {/* 답변의 근거가 된 원문. 평소 2줄, 짚으면 전부 보인다.
                           제목만 보여주면 "이 답이 어디서 나왔나" 를 확인할
                           방법이 없다 — 그게 이 화면의 존재 이유다. */}
-                      {source.excerpt && <div className="excerpt">{source.excerpt}</div>}
+                      {source.excerpt && (
+                        <div className="excerpt">{source.excerpt}</div>
+                      )}
                     </button>
                   ))}
             </div>
@@ -335,7 +430,8 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
  * `sources` 에 없는 번호는 버튼으로 만들지 않는다 — 모델이 지어낸 `[9]` 를
  * 누르면 빈 곳으로 가는 게 제일 나쁘다.
  */
-function Cited({
+/** 답변의 `[n]` 을 눌러 출처로 이어 준다. 홈 화면의 "바로 답하기" 도 쓴다. */
+export function Cited({
   text,
   sources,
   active,
@@ -354,7 +450,8 @@ function Cited({
         <p key={p}>
           {paragraph.split(/(\[\d+\])/g).map((part, i) => {
             const n = /^\[(\d+)\]$/.exec(part);
-            if (!n || !known.has(Number(n[1]))) return <span key={i}>{part}</span>;
+            if (!n || !known.has(Number(n[1])))
+              return <span key={i}>{part}</span>;
             const cite = Number(n[1]);
             return (
               <button

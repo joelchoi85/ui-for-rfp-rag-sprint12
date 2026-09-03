@@ -360,3 +360,14 @@ button, input, select { font: inherit; color: inherit; }
   font-family: var(--font-family-mono); font-size: var(--font-size-xs);
   line-height: var(--line-height-relaxed);
   white-space: pre-wrap; word-break: break-all; margin: 0; }
+
+/* ===== 목록 위의 "바로 답하기" =====
+   모드를 미리 고르게 하지 않는다. 검색은 늘 돌고, 답변은 누를 때만. */
+.askbar { margin: var(--space-4) 0 var(--space-6); }
+.askbar-head { display: flex; align-items: center; gap: var(--space-3);
+  flex-wrap: wrap; padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--color-border); border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.askbar-head span { flex: 1; min-width: 200px; }
+.askbar-sources { display: flex; flex-wrap: wrap; gap: var(--space-2);
+  margin-top: var(--space-3); }
