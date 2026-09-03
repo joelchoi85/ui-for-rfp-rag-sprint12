@@ -49,7 +49,15 @@ export type Answer = {
  * 모델을 하나만 올릴 수 있어서, 다른 모델을 고르면 VM 이 컨테이너를 갈아끼운다.
  * 화면에서 이걸 숨기면 사용자는 고장 난 줄 안다.
  */
-export type Model = { key: string; name: string; provider: string; ready: boolean };
+export type Model = {
+  key: string;
+  name: string;
+  provider: string;
+  ready: boolean;
+  /** 문항 하나당 대략의 달러. **VM 모델(sglang)은 0 이다** — 우리 GPU 를 쓴다.
+   *  값은 VM 의 `config/model_config.py` 에서 온다. 화면에 다시 적지 않는다. */
+  usd_per_call: number;
+};
 
 /** `kakaocorp/kanana-1.5-8b-instruct-2505` → `kanana-1.5-8b-instruct-2505` */
 export function modelLabel(name: string): string {
@@ -113,7 +121,9 @@ export function won(amount: number | null): string {
   if (!amount) return "금액 미상";
   const eok = Math.floor(amount / 1e8);
   const man = Math.floor((amount % 1e8) / 1e4);
-  return (eok ? `${eok}억 ` : "") + (man ? `${man.toLocaleString()}만` : "") + "원";
+  return (
+    (eok ? `${eok}억 ` : "") + (man ? `${man.toLocaleString()}만` : "") + "원"
+  );
 }
 
 /**
@@ -155,4 +165,85 @@ export function picked(docId: string): Notice | null {
   } catch {
     return null;
   }
+}
+
+/* ─── 평가 (E2E) ────────────────────────────────────────────────────────── */
+
+/** `GET /evalsets` 의 한 건. 비용은 시작 전에 보여 준다. */
+export type EvalSet = { name: string; count: number };
+
+/** 한 지표 묶음. 유형(배점·요구사항·의역·전체) → 지표 이름 → 값. */
+export type Metrics = Record<string, Record<string, number>>;
+
+/**
+ * `GET /eval/{id}`. **상태가 VM 의 파일에 있다.**
+ *
+ * 화면을 떠났다 돌아와도, 새로고침해도, VM 이 재시작돼도 이 한 번의 호출로
+ * 지금 상태를 안다. Vercel 쪽에는 아무 상태도 두지 않는다 — 거기는 프록시다.
+ */
+export type EvalJob = {
+  id: string;
+  status: "running" | "done" | "failed" | "interrupted";
+  step: string;
+  done: number;
+  total: number;
+  started_at: number;
+  finished_at: number | null;
+  options: {
+    evalset: string;
+    model: string;
+    judge: boolean;
+    judge_model: string;
+    limit: number | null;
+    generation: boolean;
+  };
+  /** VM 의 `outputs/eval_results/` 에 남는 산출물. 시작할 때부터 정해진다. */
+  files: { contexts: string; answers: string; metrics: string };
+  log: string[];
+  metrics: Record<string, Metrics> | null;
+  error: string | null;
+};
+
+/** 목록에는 로그가 없다. */
+export type EvalRow = Omit<EvalJob, "log">;
+
+export async function evalSets(): Promise<EvalSet[]> {
+  const res = await fetch(API + "/evalsets");
+  return res.ok ? res.json() : [];
+}
+
+export async function evalRuns(): Promise<EvalRow[]> {
+  const res = await fetch(API + "/eval");
+  return res.ok ? res.json() : [];
+}
+
+export async function evalJob(id: string): Promise<EvalJob> {
+  const res = await fetch(API + `/eval/${id}`);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+/** 지표 이름 순서. 화면마다 순서가 달라지면 비교가 안 된다. */
+export const METRIC_ORDER = [
+  "인용표시율",
+  "인용정확도",
+  "숫자근거율",
+  "충실성",
+  "물러섬",
+];
+
+/** `2026-09-03 16:04` — 언제 돌린 건지 목록에서 바로 읽혀야 한다. */
+export function when(epochSeconds: number): string {
+  const d = new Date(epochSeconds * 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
+    d.getHours(),
+  )}:${pad(d.getMinutes())}`;
+}
+
+/** 초를 `3분 12초` 로. 오래 걸리는 작업이라 초만 쓰면 안 읽힌다. */
+export function lapse(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return m ? `${m}분 ${s}초` : `${s}초`;
 }

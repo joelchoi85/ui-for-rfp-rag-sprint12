@@ -307,3 +307,56 @@ button, input, select { font: inherit; color: inherit; }
   line-height: var(--line-height-normal);
   max-width: var(--answer-max-width);
 }
+
+/* ===== 평가 화면 =====
+   기존 토큰과 부품(.btn .badge .card .alert .input)을 그대로 쓴다.
+   새로 만든 건 진행률 막대와 로그 상자뿐이다. */
+.eval { max-width: 880px; margin: 0 auto;   /* .results 와 같은 폭 */
+  padding: var(--space-6) var(--space-5) var(--space-12); }
+.eval h1 { font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-2); }
+.eval h2 { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold);
+  margin: var(--space-8) 0 var(--space-3); }
+.eval > p { color: var(--color-text-muted); font-size: var(--font-size-md);
+  margin: 0 0 var(--space-6); }
+
+.form { display: grid; gap: var(--space-4);
+  padding: var(--card-padding); border: 1px solid var(--card-border);
+  border-radius: var(--card-radius); background: var(--card-bg); }
+.form label { display: grid; gap: var(--space-1);
+  font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.form label.row { display: flex; align-items: center; gap: var(--space-2); }
+.form select { height: var(--button-height-md); padding: 0 var(--space-3);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: var(--color-surface); color: var(--color-text); }
+
+/* 진행률. 십수 분짜리 작업이라 이게 없으면 멈춘 줄 안다.
+   .relevance-* 를 안 쓰는 이유는 그건 카드 안 12px 짜리 지표 막대라 숫자가 안 들어간다. */
+.progress { position: relative; height: 24px; border-radius: var(--radius-md);
+  background: var(--color-surface-sunken); overflow: hidden; margin: var(--space-4) 0; }
+.progress-fill { height: 100%; background: var(--button-primary-bg);
+  transition: width var(--duration-normal) var(--easing-out); }
+.progress span { position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: var(--font-size-xs); font-variant-numeric: tabular-nums;
+  color: var(--color-text); }
+
+.runs { list-style: none; padding: 0; margin: 0; }
+.runs a { display: flex; gap: var(--space-3); align-items: center;
+  padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border);
+  text-decoration: none; color: inherit; }
+.runs a:hover { background: var(--card-bg-hover); }
+.run-id { font-family: var(--font-family-mono); font-size: var(--font-size-sm); }
+
+.metrics { border-collapse: collapse; font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-sm); margin-bottom: var(--space-5); }
+.metrics th, .metrics td { padding: var(--space-2) var(--space-5) var(--space-2) 0;
+  text-align: left; border-bottom: 1px solid var(--color-border); }
+.metrics th { color: var(--color-text-muted); font-weight: var(--font-weight-medium); }
+.metrics td:not(:first-child), .metrics th:not(:first-child) { text-align: right; }
+
+.log { max-height: 380px; overflow: auto; padding: var(--space-4);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  background: var(--color-surface-sunken);
+  font-family: var(--font-family-mono); font-size: var(--font-size-xs);
+  line-height: var(--line-height-relaxed);
+  white-space: pre-wrap; word-break: break-all; margin: 0; }
