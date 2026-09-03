@@ -36,6 +36,7 @@ export default function EvalPage() {
   const [limit, setLimit] = useState("");
   const [starting, setStarting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -70,6 +71,21 @@ export default function EvalPage() {
       // 목록 맨 앞에 꽂고 바로 고른다. 올린 다음 또 골라야 하면 한 번 더 헷갈린다.
       setSets((prev) => [{ name: got.evalset, count: got.count }, ...prev]);
       setEvalset(got.evalset);
+      // **정답 문서가 몇 건이나 코퍼스에 있는지 여기서 말해 준다.**
+      // 안 말하면 5분 뒤 0점을 보고 성능이 나쁜 줄 안다.
+      setNote(
+        [
+          `${got.matched}/${got.count}문항의 정답 문서를 코퍼스에서 찾았습니다`,
+          got.converted
+            ? `파일명 ${got.converted}건을 공고번호로 바꿨습니다`
+            : "",
+          got.unknown_count
+            ? `못 찾은 문서 ${got.unknown_count}건 (${got.unknown.slice(0, 2).join(", ")}…) — 그 문항은 발췌가 빕니다`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -149,7 +165,7 @@ export default function EvalPage() {
             <span style={{ fontSize: "var(--font-size-xs)" }}>
               {uploading
                 ? "올리는 중…"
-                : "올린 세트는 채점이 끝나면 서버에서 지웁니다."}
+                : note || "올린 세트는 채점이 끝나면 서버에서 지웁니다."}
             </span>
           </label>
 

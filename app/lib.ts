@@ -220,9 +220,16 @@ export async function evalSets(): Promise<EvalSet[]> {
  *
  * 올린 세트는 **채점이 끝나면 VM 이 지운다.** `data/` 에 쌓이면 안 된다.
  */
-export async function uploadEvalSet(
-  file: File,
-): Promise<{ evalset: string; count: number }> {
+export async function uploadEvalSet(file: File): Promise<{
+  evalset: string;
+  count: number;
+  /** 정답 문서가 코퍼스에 있는 문항 수. 0 이면 서버가 아예 안 받는다. */
+  matched: number;
+  /** doc_id 가 파일명이라 공고번호로 바꿔 준 문항 수. */
+  converted: number;
+  unknown_count: number;
+  unknown: string[];
+}> {
   return post("/eval/upload", { name: file.name, content: await file.text() });
 }
 
