@@ -33,6 +33,7 @@ export default function EvalPage() {
   const [model, setModel] = useState("mini");
   const [judge, setJudge] = useState(true);
   const [judgeModel, setJudgeModel] = useState("nano");
+  const [scoped, setScoped] = useState(true);
   const [limit, setLimit] = useState("");
   const [starting, setStarting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -105,6 +106,7 @@ export default function EvalPage() {
         model,
         judge,
         judge_model: judgeModel,
+        scoped,
         limit: limit ? Number(limit) : null,
       });
       router.push(`/eval/${job_id}`);
@@ -198,6 +200,22 @@ export default function EvalPage() {
             />
             충실성까지 잰다 (문항 수만큼 호출이 더 든다)
           </label>
+
+          {/* 이 한 칸이 "2·3단계" 와 "전 구간" 을 가른다. 끄고 낸 숫자를
+              그냥 E2E 라고 쓰면 1단계 실패분이 빠져서 실제보다 후하다. */}
+          <label className="row">
+            <input
+              type="checkbox"
+              checked={!scoped}
+              onChange={(e) => setScoped(!e.target.checked)}
+            />
+            전 구간 (1단계부터) — 공고를 안 알려주고 검색부터 시킨다
+          </label>
+          <span style={{ fontSize: "var(--font-size-xs)", marginTop: -8 }}>
+            {scoped
+              ? "지금은 정답 공고를 알려주고 그 안에서 찾습니다 — 2·3단계만 잽니다."
+              : "실제 사용자 흐름입니다. 1단계에서 놓친 만큼 그대로 점수에 들어갑니다."}
+          </span>
 
           {judge && (
             <label>

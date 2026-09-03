@@ -215,6 +215,8 @@ export type EvalJob = {
     judge_model: string;
     limit: number | null;
     generation: boolean;
+    /** false 면 공고를 안 알려주고 검색부터 — 전 구간 E2E */
+    scoped?: boolean;
   };
   /** VM 의 `outputs/eval_results/` 에 남는 산출물. 시작할 때부터 정해진다. */
   files: { contexts: string; answers: string; metrics: string };
