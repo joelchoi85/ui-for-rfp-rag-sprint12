@@ -315,6 +315,10 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                       <div className="source-agency">{source.agency}</div>
                       <div className="source-title">{source.title}</div>
                       <div className="source-id">{source.chunk_id}</div>
+                      {/* 답변의 근거가 된 원문. 평소 2줄, 짚으면 전부 보인다.
+                          제목만 보여주면 "이 답이 어디서 나왔나" 를 확인할
+                          방법이 없다 — 그게 이 화면의 존재 이유다. */}
+                      {source.excerpt && <div className="excerpt">{source.excerpt}</div>}
                     </button>
                   ))}
             </div>

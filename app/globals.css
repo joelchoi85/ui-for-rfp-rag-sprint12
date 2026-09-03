@@ -271,6 +271,11 @@ button, input, select { font: inherit; color: inherit; }
   background: var(--excerpt-bg); border-left: 3px solid var(--excerpt-border-left);
   border-radius: var(--radius-xs); color: var(--excerpt-fg);
   font-size: var(--excerpt-font-size); line-height: var(--excerpt-line-height); }
+/* 평소엔 2줄. 짚은 출처만 전부 편다 — 여덟 건이 다 펴져 있으면 아무것도 안 읽힌다.
+   JS 없이 aria-current 로만 한다. hover 와 인용 pill 클릭이 이미 그걸 켠다. */
+.source .excerpt { display: -webkit-box; -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; overflow: hidden; }
+.source[aria-current="true"] .excerpt { -webkit-line-clamp: unset; }
 
 /* ===== ProgressSteps ===== */
 .steps { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-2) 0 var(--space-5); }

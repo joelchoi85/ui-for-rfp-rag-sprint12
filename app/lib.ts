@@ -27,6 +27,8 @@ export type Source = {
   title: string;
   agency: string;
   chunk_id: string;
+  /** 근거로 쓴 원문 발췌. 이게 이 제품의 핵심이라 화면에서 빠지면 안 된다. */
+  excerpt: string;
 };
 
 /** `POST /ask` 응답. `ok: false` 여도 HTTP 200 으로 온다. */
