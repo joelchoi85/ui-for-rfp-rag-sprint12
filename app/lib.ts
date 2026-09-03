@@ -212,6 +212,20 @@ export async function evalSets(): Promise<EvalSet[]> {
   return res.ok ? res.json() : [];
 }
 
+/**
+ * 평가 세트를 올린다. `.json`(배열) · `.jsonl` 둘 다 된다.
+ *
+ * 파일을 **브라우저가 읽어 문자열로** 보낸다. multipart 를 쓰면 VM 에
+ * `python-multipart` 를 새로 깔아야 하는데, 세트는 커야 수백 KB 라 그럴 값이 없다.
+ *
+ * 올린 세트는 **채점이 끝나면 VM 이 지운다.** `data/` 에 쌓이면 안 된다.
+ */
+export async function uploadEvalSet(
+  file: File,
+): Promise<{ evalset: string; count: number }> {
+  return post("/eval/upload", { name: file.name, content: await file.text() });
+}
+
 export async function evalRuns(): Promise<EvalRow[]> {
   const res = await fetch(API + "/eval");
   return res.ok ? res.json() : [];

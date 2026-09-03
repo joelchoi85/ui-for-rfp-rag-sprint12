@@ -13,6 +13,7 @@ import {
   modelLabel,
   models,
   post,
+  uploadEvalSet,
   when,
 } from "../lib";
 
@@ -34,6 +35,7 @@ export default function EvalPage() {
   const [judgeModel, setJudgeModel] = useState("nano");
   const [limit, setLimit] = useState("");
   const [starting, setStarting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -58,6 +60,22 @@ export default function EvalPage() {
   const cost = (count * (per(model) + (judge ? per(judgeModel) : 0))).toFixed(
     2,
   );
+
+  async function upload(file: File | undefined) {
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const got = await uploadEvalSet(file);
+      // 목록 맨 앞에 꽂고 바로 고른다. 올린 다음 또 골라야 하면 한 번 더 헷갈린다.
+      setSets((prev) => [{ name: got.evalset, count: got.count }, ...prev]);
+      setEvalset(got.evalset);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function start() {
     setStarting(true);
@@ -117,6 +135,22 @@ export default function EvalPage() {
                 </option>
               ))}
             </select>
+          </label>
+
+          <label>
+            평가 세트 올리기 (.json / .jsonl)
+            <input
+              className="input"
+              type="file"
+              accept=".json,.jsonl,application/json"
+              disabled={uploading}
+              onChange={(e) => upload(e.target.files?.[0])}
+            />
+            <span style={{ fontSize: "var(--font-size-xs)" }}>
+              {uploading
+                ? "올리는 중…"
+                : "올린 세트는 채점이 끝나면 서버에서 지웁니다."}
+            </span>
           </label>
 
           <label>
