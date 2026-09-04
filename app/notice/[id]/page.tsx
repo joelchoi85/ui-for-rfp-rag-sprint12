@@ -11,6 +11,8 @@ import {
   fetchNotice,
   post,
   Source,
+  lastSearch,
+  pick,
   won,
 } from "../../lib";
 import { isCold, ModelSelect } from "../../ModelSelect";
@@ -192,8 +194,15 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                   </button>
                 ))}
               </div>
-              {notice?.summary && (
-                <details style={{ marginTop: "var(--space-8)" }}>
+              {/* **요약이 없는 공고가 더 많다.** `사업 요약` 은 나라장터 API 에
+                  없는 값이라 크롤러가 못 채운다(처음 받은 100건만 사람이 넣었다).
+                  그때는 원문 첫 대목이라도 보여준다 — 제목만 있고 텅 빈 화면보다
+                  낫고, 없는 요약을 지어내는 것보다 정직하다. */}
+              {(notice?.summary || notice?.excerpt) && (
+                <details
+                  style={{ marginTop: "var(--space-8)" }}
+                  open={!notice.summary}
+                >
                   <summary
                     style={{
                       cursor: "pointer",
@@ -201,7 +210,7 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                       color: "var(--color-text-muted)",
                     }}
                   >
-                    공고 요약 보기
+                    {notice.summary ? "공고 요약 보기" : "원문 첫 대목"}
                   </summary>
                   <div
                     className="excerpt"
@@ -210,7 +219,7 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                       marginTop: "var(--space-3)",
                     }}
                   >
-                    {notice.summary}
+                    {notice.summary || notice.excerpt}
                   </div>
                 </details>
               )}
@@ -331,10 +340,18 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
               </div>
               <div className="answer-meta num">
                 <span>{answer.model}</span>
+                {/* **검색과 생성을 나눠 보여준다.** "5초" 만 알면 어디를
+                    줄여야 할지 모른다. 거의 늘 생성 쪽이 길다. */}
+                {answer.search_sec != null && (
+                  <>
+                    <span>·</span>
+                    <span>검색 {answer.search_sec.toFixed(1)}초</span>
+                  </>
+                )}
                 {answer.latency_sec != null && (
                   <>
                     <span>·</span>
-                    <span>{answer.latency_sec.toFixed(1)}초</span>
+                    <span>생성 {answer.latency_sec.toFixed(1)}초</span>
                   </>
                 )}
                 {answer.usage && (
@@ -373,60 +390,66 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
           </form>
         </div>
 
-        {(asking || sources.length > 0) && (
-          <aside className="rail">
-            <div className="rail-head">
-              출처{" "}
-              {sources.length > 0 && (
-                <span className="badge badge-info">{sources.length}건</span>
-              )}
-            </div>
-            <div className="sources">
-              {asking
-                ? [0, 1].map((i) => (
-                    <div
-                      key={i}
-                      className="source"
-                      style={{ cursor: "default" }}
-                    >
+        <aside className="rail">
+          {(asking || sources.length > 0) && (
+            <>
+              <div className="rail-head">
+                출처{" "}
+                {sources.length > 0 && (
+                  <span className="badge badge-info">{sources.length}건</span>
+                )}
+              </div>
+              <div className="sources">
+                {asking
+                  ? [0, 1].map((i) => (
                       <div
-                        className="sk"
-                        style={{ width: 60, height: 12, marginBottom: 8 }}
-                      />
-                      <div
-                        className="sk"
-                        style={{ width: "85%", height: 14, marginBottom: 6 }}
-                      />
-                      <div
-                        className="sk"
-                        style={{ width: "100%", height: 34 }}
-                      />
-                    </div>
-                  ))
-                : sources.map((source) => (
-                    <button
-                      key={source.n}
-                      className="source"
-                      aria-current={activeCite === source.n}
-                      aria-label={`출처 ${source.n} ${source.agency}`}
-                      onMouseEnter={() => setActiveCite(source.n)}
-                      onMouseLeave={() => setActiveCite(null)}
-                    >
-                      <span className="source-n">[{source.n}]</span>
-                      <div className="source-agency">{source.agency}</div>
-                      <div className="source-title">{source.title}</div>
-                      <div className="source-id">{source.chunk_id}</div>
-                      {/* 답변의 근거가 된 원문. 평소 2줄, 짚으면 전부 보인다.
+                        key={i}
+                        className="source"
+                        style={{ cursor: "default" }}
+                      >
+                        <div
+                          className="sk"
+                          style={{ width: 60, height: 12, marginBottom: 8 }}
+                        />
+                        <div
+                          className="sk"
+                          style={{ width: "85%", height: 14, marginBottom: 6 }}
+                        />
+                        <div
+                          className="sk"
+                          style={{ width: "100%", height: 34 }}
+                        />
+                      </div>
+                    ))
+                  : sources.map((source) => (
+                      <button
+                        key={source.n}
+                        className="source"
+                        aria-current={activeCite === source.n}
+                        aria-label={`출처 ${source.n} ${source.agency}`}
+                        onMouseEnter={() => setActiveCite(source.n)}
+                        onMouseLeave={() => setActiveCite(null)}
+                      >
+                        <span className="source-n">[{source.n}]</span>
+                        <div className="source-agency">{source.agency}</div>
+                        <div className="source-title">{source.title}</div>
+                        <div className="source-id">{source.chunk_id}</div>
+                        {/* 답변의 근거가 된 원문. 평소 2줄, 짚으면 전부 보인다.
                           제목만 보여주면 "이 답이 어디서 나왔나" 를 확인할
                           방법이 없다 — 그게 이 화면의 존재 이유다. */}
-                      {source.excerpt && (
-                        <div className="excerpt">{source.excerpt}</div>
-                      )}
-                    </button>
-                  ))}
-            </div>
-          </aside>
-        )}
+                        {source.excerpt && (
+                          <div className="excerpt">{source.excerpt}</div>
+                        )}
+                      </button>
+                    ))}
+              </div>
+            </>
+          )}
+
+          {/* 직전에 본 목록. 공고를 하나 열어 보고 "다음 건" 으로 넘어가는 게
+              이 화면의 기본 동작인데, 지금은 뒤로 갔다 다시 들어와야 한다. */}
+          <NearbyList current={id} />
+        </aside>
       </div>
     </>
   );
@@ -439,6 +462,46 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
  * 누르면 빈 곳으로 가는 게 제일 나쁘다.
  */
 /** 답변의 `[n]` 을 눌러 출처로 이어 준다. 홈 화면의 "바로 답하기" 도 쓴다. */
+/**
+ * 직전에 검색한 목록을 옆에 둔다. 지금 보는 공고는 뺀다.
+ *
+ * 컨설턴트는 열 건을 훑으면서 하나씩 열어 본다. 목록으로 돌아가는 왕복이
+ * 기본 동작인데 그걸 매번 뒤로가기로 하게 두면 안 된다.
+ */
+function NearbyList({ current }: { current: string }) {
+  const [items, setItems] = useState<Notice[]>([]);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    setItems((lastSearch()?.notices ?? []).filter((n) => n.doc_id !== current));
+  }, [current]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  if (!items.length) return null;
+
+  return (
+    <>
+      <div className="rail-head" style={{ marginTop: "var(--space-6)" }}>
+        방금 찾은 공고 <span className="badge">{items.length}건</span>
+      </div>
+      <div className="sources">
+        {items.slice(0, 12).map((notice) => (
+          <Link
+            key={notice.doc_id}
+            href={`/notice/${encodeURIComponent(notice.doc_id)}`}
+            className="source"
+            onClick={() => pick(notice)}
+          >
+            <div className="source-agency">{notice.agency}</div>
+            <div className="source-title">{notice.title || notice.doc_id}</div>
+            <div className="source-id num">{won(notice.budget)}</div>
+          </Link>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function Cited({
   text,
   sources,

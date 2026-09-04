@@ -509,6 +509,21 @@ function AskBar({
   onActive: (n: number | null) => void;
   notices: Notice[];
 }) {
+  // 흘러가는 초를 보여준다. 스켈레톤만 있으면 5초가 멈춘 것처럼 느껴진다.
+  const [waited, setWaited] = useState(0);
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!asking) return;
+    setWaited(0);
+    const at = Date.now();
+    const timer = setInterval(
+      () => setWaited(Math.round((Date.now() - at) / 1000)),
+      500,
+    );
+    return () => clearInterval(timer);
+  }, [asking]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   return (
     <div className="askbar">
       {!answer && (
@@ -530,6 +545,9 @@ function AskBar({
         <div className="answer" aria-busy="true">
           <div className="sk" style={{ height: 15, marginBottom: 10 }} />
           <div className="sk" style={{ height: 15, width: "62%" }} />
+          <div className="answer-meta num">
+            <span>답을 만드는 중… {waited}초</span>
+          </div>
         </div>
       )}
 
@@ -550,6 +568,16 @@ function AskBar({
               active={active}
               onActive={onActive}
             />
+          </div>
+          {/* 검색과 생성을 나눠 보여준다. 거의 늘 생성 쪽이 길다. */}
+          <div className="answer-meta num">
+            <span>{answer.model}</span>
+            {answer.search_sec != null && (
+              <span>· 검색 {answer.search_sec.toFixed(1)}초</span>
+            )}
+            {answer.latency_sec != null && (
+              <span>· 생성 {answer.latency_sec.toFixed(1)}초</span>
+            )}
           </div>
           {/* **누르면 그 공고로 간다.** 하이라이팅만 되고 아무 일도 안 일어나면
               "왜 눌리지" 가 된다. 사용자가 출처를 누르는 이유는 그 공고를 더

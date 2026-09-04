@@ -17,6 +17,7 @@ export type Notice = {
   summary: string | null;
   score: number;
   청크수: number;
+  /** 요약이 비었을 때 대신 보여줄 원문 첫 대목. 요약은 나라장터 API 에 없다. */
   excerpt: string;
 };
 
@@ -38,6 +39,9 @@ export type Answer = {
   error: string | null;
   model: string | null;
   latency_sec: number | null;
+  /** 검색에 쓴 초. **생성과 나눠서 본다** — 합계만 알면 어디를 줄일지 모른다. */
+  search_sec?: number;
+  total_sec?: number;
   usage: { input_tokens: number; output_tokens: number } | null;
   sources: Source[];
 };
