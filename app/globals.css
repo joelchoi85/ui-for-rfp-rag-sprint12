@@ -415,3 +415,7 @@ a.chip { text-decoration: none; }
   font-size: var(--font-size-xs); color: var(--color-text-subtle); }
 .source-more { display: block; margin-top: var(--space-2);
   font-size: var(--font-size-xs); color: var(--color-primary, #2563eb); }
+
+/* 스피너는 12px 원이다. flex 안에서 줄어들거나 늘어나지 않게 못 박는다 —
+   글자 옆에 두면 flex-shrink 로 납작한 막대가 되어 "이상한 게 돈다" 가 된다. */
+.spinner { flex: none; display: inline-block; vertical-align: -1px; }

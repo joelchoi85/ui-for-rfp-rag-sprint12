@@ -48,6 +48,21 @@ export default function SearchPage() {
   const [activeCite, setActiveCite] = useState<number | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const [openHistory, setOpenHistory] = useState(false);
+  // 흘러가는 초. 스켈레톤만 있으면 몇 초든 멈춘 것처럼 느껴진다.
+  const [waited, setWaited] = useState(0);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!asking) return;
+    setWaited(0);
+    const at = Date.now();
+    const timer = setInterval(
+      () => setWaited(Math.round((Date.now() - at) / 1000)),
+      500,
+    );
+    return () => clearInterval(timer);
+  }, [asking]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // 공고 화면에서 뒤로 오면 리마운트된다. **사용자가 지우기 전까지는 남긴다** —
   // 열 건을 훑다 하나 눌러 보고 돌아오는 게 이 화면의 기본 동작이다.
@@ -274,6 +289,18 @@ export default function SearchPage() {
               &quot;클라우드 전환&quot;, &quot;장애인 접근성 개선&quot; 같이
               자연어로 씁니다.
             </p>
+          </div>
+        )}
+
+        {/* 답변은 검색과 **나란히** 돈다. 그러니 대기 표시도 따로 떠야 한다.
+            목록이 다 온 뒤에 나타나면, 누른 직후 1~2초는 아무 표시가 없다가
+            갑자기 뜬다 — 그게 "무엇을 기다리는지 모르겠다" 로 보인다. */}
+        {asking && !answer && (
+          <div className="askbar">
+            <div className="askbar-head" aria-live="polite">
+              <span className="spinner" />
+              <span>답을 만드는 중… {waited}초</span>
+            </div>
           </div>
         )}
 
@@ -512,21 +539,6 @@ function AskBar({
   onActive: (n: number | null) => void;
   notices: Notice[];
 }) {
-  // 흘러가는 초를 보여준다. 스켈레톤만 있으면 5초가 멈춘 것처럼 느껴진다.
-  const [waited, setWaited] = useState(0);
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    if (!asking) return;
-    setWaited(0);
-    const at = Date.now();
-    const timer = setInterval(
-      () => setWaited(Math.round((Date.now() - at) / 1000)),
-      500,
-    );
-    return () => clearInterval(timer);
-  }, [asking]);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
   return (
     <div className="askbar">
       {!answer && (
@@ -541,16 +553,6 @@ function AskBar({
           >
             {asking && <span className="spinner" />} 바로 답하기
           </button>
-        </div>
-      )}
-
-      {asking && !answer && (
-        <div className="answer" aria-busy="true">
-          <div className="sk" style={{ height: 15, marginBottom: 10 }} />
-          <div className="sk" style={{ height: 15, width: "62%" }} />
-          <div className="answer-meta num">
-            <span>답을 만드는 중… {waited}초</span>
-          </div>
         </div>
       )}
 
