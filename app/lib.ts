@@ -81,6 +81,104 @@ export function pickModel(key: string) {
   }
 }
 
+/**
+ * 공고 한 건을 서버에서. `picked()` 가 비었을 때 쓴다.
+ *
+ * 목록을 거치지 않고 들어오는 길이 셋이나 된다 — 새로고침, 주소 직접 입력,
+ * 답변의 출처 누르기. 세션에만 기대면 그때 제목도 요약도 빈다.
+ */
+export async function fetchNotice(docId: string): Promise<Notice | null> {
+  try {
+    const res = await fetch(API + `/notice/${encodeURIComponent(docId)}`);
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+/* ─── 최근 검색어 ──────────────────────────────────────────────────────── */
+
+const RECENT = "bidmate:recent";
+const RECENT_MAX = 30; // 보여주는 건 10개. 지우면 그 앞엣것이 드러나야 하므로 더 갖고 있는다
+
+/** 최근 검색어. 최신이 앞. */
+export function recent(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+/** 하나 기억한다. 같은 말은 위로 올린다. */
+export function remember(query: string) {
+  const text = query.trim();
+  if (!text) return;
+  try {
+    const kept = [text, ...recent().filter((q) => q !== text)].slice(
+      0,
+      RECENT_MAX,
+    );
+    localStorage.setItem(RECENT, JSON.stringify(kept));
+  } catch {
+    // 사파리 프라이빗 모드 등. 검색 기록 하나 때문에 화면이 죽으면 안 된다.
+  }
+}
+
+/** 하나만 지운다. `null` 이면 전부. */
+export function forget(query: string | null): string[] {
+  try {
+    const kept = query === null ? [] : recent().filter((q) => q !== query);
+    localStorage.setItem(RECENT, JSON.stringify(kept));
+    return kept;
+  } catch {
+    return [];
+  }
+}
+
+/* ─── 마지막 검색 결과 ──────────────────────────────────────────────────── */
+
+const LAST = "bidmate:last";
+
+/**
+ * 방금 본 목록을 담아 둔다. 공고 화면에서 **뒤로 오면 그대로 있어야 한다.**
+ *
+ * 홈은 클라이언트 상태라 되돌아오면 리마운트되어 다 날아간다. 사용자가 지우기
+ * 전까지는 남기는 게 맞다 — 열 건을 훑다가 하나 눌러 보고 돌아오는 게 이 화면의
+ * 기본 동작이다.
+ */
+export function keepLast(state: {
+  query: string;
+  notices: Notice[];
+  elapsed: number;
+}) {
+  try {
+    sessionStorage.setItem(LAST, JSON.stringify(state));
+  } catch {
+    // 못 담아도 검색은 된다
+  }
+}
+
+export function lastSearch(): {
+  query: string;
+  notices: Notice[];
+  elapsed: number;
+} | null {
+  try {
+    return JSON.parse(sessionStorage.getItem(LAST) ?? "null");
+  } catch {
+    return null;
+  }
+}
+
+export function clearLast() {
+  try {
+    sessionStorage.removeItem(LAST);
+  } catch {
+    // 무시
+  }
+}
+
 /** `pickModel()` 로 넘겨둔 키. 없으면 null. */
 export function pickedModel(): string | null {
   try {

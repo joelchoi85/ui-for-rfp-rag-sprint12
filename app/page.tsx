@@ -1,8 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Answer, day, dday, Notice, pick, post, Source, won } from "./lib";
+import { useEffect, useState } from "react";
+import {
+  Answer,
+  clearLast,
+  day,
+  dday,
+  forget,
+  keepLast,
+  lastSearch,
+  Notice,
+  pick,
+  post,
+  recent,
+  remember,
+  Source,
+  won,
+} from "./lib";
 import { Cited } from "./notice/[id]/page";
 import { ModelSelect } from "./ModelSelect";
 import Image from "next/image";
@@ -31,10 +46,42 @@ export default function SearchPage() {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [asking, setAsking] = useState(false);
   const [activeCite, setActiveCite] = useState<number | null>(null);
+  const [history, setHistory] = useState<string[]>([]);
+  const [openHistory, setOpenHistory] = useState(false);
 
-  async function search(text = query) {
+  // 공고 화면에서 뒤로 오면 리마운트된다. **사용자가 지우기 전까지는 남긴다** —
+  // 열 건을 훑다 하나 눌러 보고 돌아오는 게 이 화면의 기본 동작이다.
+  //
+  // 이펙트에서 setState 를 네 번 부르면 그만큼 다시 그린다. 한 번에 담는다.
+  // 초기값으로는 못 읽는다 — 서버에서 먼저 그리는데 sessionStorage 가 없다.
+  //
+  // 규칙(set-state-in-effect)은 공고 화면과 같은 이유로 끈다 — 마운트 때 한 번이고
+  // sessionStorage 는 서버에 없어서 초기값으로는 못 읽는다. 초기값으로 옮기면
+  // 서버는 빈 화면, 클라이언트는 목록을 그려 하이드레이션이 깨진다.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    setHistory(recent());
+    const last = lastSearch();
+    if (!last?.notices?.length) return;
+    setQuery(last.query);
+    setNotices(last.notices);
+    setElapsed(last.elapsed);
+    setStatus("done");
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  /**
+   * 검색한다. `andAsk` 면 답변까지 이어서 만든다.
+   *
+   * 버튼을 둘로 둔 이유: "바로 답하기" 를 누른 사람은 목록을 보려고 누른 게
+   * 아니다. 검색을 먼저 누르게 하면 두 번 누른다.
+   */
+  async function search(text = query, andAsk = false) {
     if (!text.trim()) return;
     setQuery(text);
+    setOpenHistory(false);
+    remember(text);
+    setHistory(recent());
     setStatus("loading");
     const startedAt = Date.now();
     try {
@@ -45,20 +92,23 @@ export default function SearchPage() {
         min_budget: minBudget ? Number(minBudget) * 1e8 : null,
         agency: agency || null,
       });
+      const took = (Date.now() - startedAt) / 1000;
       setNotices(found);
-      setElapsed((Date.now() - startedAt) / 1000);
+      setElapsed(took);
       setStatus("done");
       setAnswer(null); // 질문이 바뀌었으니 옛 답을 남기지 않는다
+      keepLast({ query: text, notices: found, elapsed: took });
+      if (andAsk) ask(text);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setStatus("error");
     }
   }
 
-  async function ask() {
+  async function ask(text = query) {
     setAsking(true);
     try {
-      setAnswer(await post<Answer>("/ask", { question: query, model }));
+      setAnswer(await post<Answer>("/ask", { question: text, model }));
     } catch (e) {
       setAnswer({
         ok: false,
@@ -77,6 +127,15 @@ export default function SearchPage() {
   function reset() {
     setMinBudget("");
     setAgency("");
+  }
+
+  /** 화면을 처음 상태로. **사용자가 누를 때만 지운다.** */
+  function clearAll() {
+    setQuery("");
+    setNotices([]);
+    setAnswer(null);
+    setStatus("idle");
+    clearLast();
   }
 
   // 관련도는 이 목록 안에서만 뜻이 있다. 절대 점수는 보여주지 않는다.
@@ -126,15 +185,40 @@ export default function SearchPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setOpenHistory(true)}
+            /* 목록 안의 버튼을 누를 틈을 준다. 바로 닫으면 삭제가 안 눌린다. */
+            onBlur={() => setTimeout(() => setOpenHistory(false), 150)}
             placeholder="클라우드 전환 사업"
             aria-label="검색어"
+            autoComplete="off"
           />
           <button
             className="btn btn-primary btn-lg"
             disabled={status === "loading" || !query.trim()}
           >
-            {status === "loading" ? <span className="spinner" /> : null} 찾기
+            {status === "loading" && !asking ? (
+              <span className="spinner" />
+            ) : null}{" "}
+            찾기
           </button>
+          {/* 목록을 보려고 누른 게 아닌 사람은 여기를 누른다. 두 번 안 누르게. */}
+          <button
+            type="button"
+            className="btn btn-secondary btn-lg"
+            disabled={status === "loading" || asking || !query.trim()}
+            onClick={() => search(query, true)}
+          >
+            {asking ? <span className="spinner" /> : null} 바로 답하기
+          </button>
+
+          {openHistory && history.length > 0 && (
+            <RecentList
+              items={history}
+              onPick={(text) => search(text)}
+              onForget={(text) => setHistory(forget(text))}
+              onForgetAll={() => setHistory(forget(null))}
+            />
+          )}
         </form>
 
         <div className="examples">
@@ -248,6 +332,9 @@ export default function SearchPage() {
               >
                 관련도 순 — 1위가 정답이라는 뜻은 아닙니다
               </span>
+              <button className="btn btn-ghost btn-sm" onClick={clearAll}>
+                초기화
+              </button>
             </div>
             {/* 목록 위에 한 줄. **모드를 미리 고르게 하지 않는다** — 사용자는
                 목록을 보고 나서야 "그냥 답 줘" 로 바뀐다. 페이지를 나누면
@@ -256,9 +343,10 @@ export default function SearchPage() {
               query={query}
               answer={answer}
               asking={asking}
-              onAsk={ask}
+              onAsk={() => ask()}
               active={activeCite}
               onActive={setActiveCite}
+              notices={notices}
             />
 
             <div className="cards">
@@ -334,6 +422,68 @@ function NoticeCard({
 }
 
 /**
+ * 최근 검색어 드롭다운. 보여주는 건 10개.
+ *
+ * `<datalist>` 를 안 쓴 이유는 **하나씩 지울 수가 없어서** 다. 지우면 그 앞에
+ * 밀려 있던 검색어가 드러나야 하므로 30개까지 들고 있다가 열 개만 보여 준다.
+ *
+ * `onMouseDown` 으로 받는다. `onClick` 은 입력의 blur 뒤에 와서, 목록이 닫힌
+ * 다음이라 눌리지 않는다.
+ */
+function RecentList({
+  items,
+  onPick,
+  onForget,
+  onForgetAll,
+}: {
+  items: string[];
+  onPick: (text: string) => void;
+  onForget: (text: string) => void;
+  onForgetAll: () => void;
+}) {
+  return (
+    <ul className="recent" role="listbox" aria-label="최근 검색어">
+      {items.slice(0, 10).map((text) => (
+        <li key={text}>
+          <button
+            type="button"
+            className="recent-pick"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onPick(text);
+            }}
+          >
+            {text}
+          </button>
+          <button
+            type="button"
+            className="recent-x"
+            aria-label={`${text} 지우기`}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onForget(text);
+            }}
+          >
+            ×
+          </button>
+        </li>
+      ))}
+      <li className="recent-foot">
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onForgetAll();
+          }}
+        >
+          전체 삭제
+        </button>
+      </li>
+    </ul>
+  );
+}
+
+/**
  * 목록 위의 "바로 답하기".
  *
  * 공고를 고르지 않고 전체에서 찾아 답한다 — 화면 두 개를 거치는 흐름의
@@ -349,6 +499,7 @@ function AskBar({
   onAsk,
   active,
   onActive,
+  notices,
 }: {
   query: string;
   answer: Answer | null;
@@ -356,6 +507,7 @@ function AskBar({
   onAsk: () => void;
   active: number | null;
   onActive: (n: number | null) => void;
+  notices: Notice[];
 }) {
   return (
     <div className="askbar">
@@ -399,17 +551,26 @@ function AskBar({
               onActive={onActive}
             />
           </div>
+          {/* **누르면 그 공고로 간다.** 하이라이팅만 되고 아무 일도 안 일어나면
+              "왜 눌리지" 가 된다. 사용자가 출처를 누르는 이유는 그 공고를 더
+              보려는 것이다. 목록에 있는 건이면 값을 세션에 넘겨 화면이 즉시
+              차게 하고, 없으면 공고 화면이 서버에 물어본다. */}
           <div className="askbar-sources">
             {answer.sources.map((source: Source) => (
-              <span
+              <Link
                 key={source.n}
+                href={`/notice/${encodeURIComponent(source.doc_id)}`}
                 className="chip"
                 aria-current={active === source.n}
                 onMouseEnter={() => onActive(source.n)}
                 onMouseLeave={() => onActive(null)}
+                onClick={() => {
+                  const found = notices.find((n) => n.doc_id === source.doc_id);
+                  if (found) pick(found);
+                }}
               >
-                [{source.n}] {source.title || source.doc_id}
-              </span>
+                [{source.n}] {source.title || source.doc_id} →
+              </Link>
             ))}
           </div>
         </>

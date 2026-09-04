@@ -8,6 +8,7 @@ import {
   dday,
   Notice,
   picked,
+  fetchNotice,
   post,
   Source,
   won,
@@ -55,8 +56,15 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
   // 첫 렌더는 서버와 똑같이 null 로 그리고(그래야 하이드레이션이 안 깨진다)
   // 붙은 뒤에 채운다. useState 초기값이나 useMemo 로 옮기면 서버는 doc_id,
   // 클라이언트는 제목을 그려서 하이드레이션 불일치가 난다.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setNotice(picked(id)), [id]);
+  // 세션에 있으면 그걸 쓰고(즉시), 없으면 서버에 묻는다. 목록을 안 거치고
+  // 들어오는 길이 셋이다 — 새로고침, 주소 직접 입력, 답변의 출처 누르기.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const kept = picked(id);
+    setNotice(kept);
+    if (!kept) fetchNotice(id).then(setNotice);
+  }, [id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (!asking || cold) return;
