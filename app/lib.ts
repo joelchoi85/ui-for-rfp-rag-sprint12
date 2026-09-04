@@ -30,7 +30,49 @@ export type Source = {
   chunk_id: string;
   /** 근거로 쓴 원문 발췌. 이게 이 제품의 핵심이라 화면에서 빠지면 안 된다. */
   excerpt: string;
+  /** 발췌 전체. 팝업에서 끝까지 읽는다. */
+  text?: string;
 };
+
+/**
+ * 질문·답변과 겹치는 자리를 표시한다.
+ *
+ * **어디가 근거인지 우리는 모른다.** 모델이 어느 문장을 보고 답했는지는 알
+ * 수 없다. 그러니 아는 것만 말한다 — 질문에 있던 낱말과 답변에 나온 숫자가
+ * 원문 어디에 있는지. 그것만으로도 눈이 갈 자리가 정해진다.
+ *
+ * @param text 원문
+ * @param terms 찾을 말들 (질문 낱말 · 답변 속 숫자)
+ * @returns `{part, hit}` 조각들. `hit` 이면 표시한다
+ */
+export function marked(
+  text: string,
+  terms: string[],
+): { part: string; hit: boolean }[] {
+  const words = [
+    ...new Set(terms.map((t) => t.trim()).filter((t) => t.length >= 2)),
+  ]
+    .sort((a, b) => b.length - a.length)
+    .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (!words.length) return [{ part: text, hit: false }];
+  return text
+    .split(new RegExp(`(${words.join("|")})`, "gi"))
+    .filter(Boolean)
+    .map((part) => ({
+      part,
+      hit: words.some((w) => new RegExp(`^${w}$`, "i").test(part)),
+    }));
+}
+
+/** 질문의 낱말 + 답변 속 숫자. 팝업에서 표시할 것들. */
+export function evidenceTerms(
+  question: string,
+  answer: string | null,
+): string[] {
+  const words = question.split(/[\s,·]+/).filter((w) => w.length >= 2);
+  const numbers = (answer ?? "").match(/[\d][\d,]*(?:\.\d+)?%?/g) ?? [];
+  return [...words, ...numbers];
+}
 
 /** `POST /ask` 응답. `ok: false` 여도 HTTP 200 으로 온다. */
 export type Answer = {

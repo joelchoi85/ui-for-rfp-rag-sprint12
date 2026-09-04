@@ -78,6 +78,10 @@ export default function SearchPage() {
    */
   async function search(text = query, andAsk = false) {
     if (!text.trim()) return;
+    // **나란히 보낸다.** 이어서 부르면 `/ask` 가 검색을 처음부터 다시 돌아
+    // 1.5초쯤을 그냥 버린다(둘 다 같은 retrieve 를 탄다). FastAPI 가 동기
+    // 엔드포인트를 스레드풀에서 돌리므로 두 요청이 겹쳐 돈다.
+    if (andAsk) ask(text);
     setQuery(text);
     setOpenHistory(false);
     remember(text);
@@ -98,7 +102,6 @@ export default function SearchPage() {
       setStatus("done");
       setAnswer(null); // 질문이 바뀌었으니 옛 답을 남기지 않는다
       keepLast({ query: text, notices: found, elapsed: took });
-      if (andAsk) ask(text);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setStatus("error");

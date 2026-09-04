@@ -394,3 +394,24 @@ button, input, select { font: inherit; color: inherit; }
 
 /* 출처 칩은 이제 링크다 */
 a.chip { text-decoration: none; }
+
+/* ===== 출처 전체 보기 =====
+   <dialog> 을 쓴다. 포커스 가두기·ESC·백드롭이 브라우저에 이미 있다. */
+.sheet { width: min(680px, 92vw); max-height: 80vh; padding: 0;
+  border: 1px solid var(--color-border); border-radius: var(--radius-xl, 14px);
+  background: var(--color-surface); color: var(--color-text); overflow: hidden; }
+.sheet::backdrop { background: rgb(0 0 0 / 45%); }
+.sheet-head { display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-3); padding: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-md); font-weight: var(--font-weight-semibold); }
+.sheet-body { padding: var(--space-5); overflow: auto; max-height: 56vh;
+  font-size: var(--font-size-md); line-height: var(--line-height-relaxed);
+  white-space: pre-wrap; word-break: break-word; }
+.sheet-body mark { background: var(--color-warning-subtle); color: inherit;
+  padding: 0 2px; border-radius: 3px; }
+.sheet-foot { padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-xs); color: var(--color-text-subtle); }
+.source-more { display: block; margin-top: var(--space-2);
+  font-size: var(--font-size-xs); color: var(--color-primary, #2563eb); }

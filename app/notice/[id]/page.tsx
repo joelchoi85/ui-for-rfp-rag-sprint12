@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import {
   Answer,
   day,
@@ -12,6 +12,8 @@ import {
   post,
   Source,
   lastSearch,
+  marked,
+  evidenceTerms,
   pick,
   won,
 } from "../../lib";
@@ -50,6 +52,7 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [failure, setFailure] = useState("");
   const [activeCite, setActiveCite] = useState<number | null>(null);
+  const [openSource, setOpenSource] = useState<Source | null>(null);
 
   // 목록에서 넘어왔으면 공고 정보가 sessionStorage 에 있다. 직접 열었으면 없다.
   //
@@ -429,6 +432,7 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                         aria-label={`출처 ${source.n} ${source.agency}`}
                         onMouseEnter={() => setActiveCite(source.n)}
                         onMouseLeave={() => setActiveCite(null)}
+                        onClick={() => setOpenSource(source)}
                       >
                         <span className="source-n">[{source.n}]</span>
                         <div className="source-agency">{source.agency}</div>
@@ -440,6 +444,7 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                         {source.excerpt && (
                           <div className="excerpt">{source.excerpt}</div>
                         )}
+                        <span className="source-more">전체 보기 →</span>
                       </button>
                     ))}
               </div>
@@ -450,6 +455,12 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
               이 화면의 기본 동작인데, 지금은 뒤로 갔다 다시 들어와야 한다. */}
           <NearbyList current={id} />
         </aside>
+
+        <SourceDialog
+          source={openSource}
+          terms={evidenceTerms(asked, answer?.answer ?? null)}
+          onClose={() => setOpenSource(null)}
+        />
       </div>
     </>
   );
@@ -468,6 +479,76 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
  * 컨설턴트는 열 건을 훑으면서 하나씩 열어 본다. 목록으로 돌아가는 왕복이
  * 기본 동작인데 그걸 매번 뒤로가기로 하게 두면 안 된다.
  */
+/**
+ * 출처 하나를 끝까지 보여주는 팝업.
+ *
+ * 옆 목록은 좁아서 발췌가 잘린다. hover 로 조금 더 보여줘도 배점표 한 줄을
+ * 확인하려면 모자란다 — 컨설턴트가 출처를 누르는 이유가 그거다.
+ *
+ * `<dialog>` 를 쓴다. 포커스 가두기·ESC 닫기·바깥 클릭이 브라우저에 이미 있다.
+ * 직접 만들면 그 셋을 다시 짜야 하고 접근성은 대개 더 나빠진다.
+ */
+function SourceDialog({
+  source,
+  terms,
+  onClose,
+}: {
+  source: Source | null;
+  terms: string[];
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const box = ref.current;
+    if (!box) return;
+    if (source && !box.open) box.showModal();
+    if (!source && box.open) box.close();
+  }, [source]);
+
+  return (
+    <dialog
+      ref={ref}
+      className="sheet"
+      onClose={onClose}
+      onClick={(e) => {
+        // 바깥(백드롭)을 누르면 닫는다. 안쪽은 그대로 둔다.
+        if (e.target === ref.current) onClose();
+      }}
+    >
+      {source && (
+        <>
+          <div className="sheet-head">
+            <div>
+              <span className="source-n">[{source.n}]</span> {source.title}
+              <div className="source-agency">{source.agency}</div>
+            </div>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={onClose}
+              aria-label="닫기"
+            >
+              ×
+            </button>
+          </div>
+          <div className="sheet-body">
+            {marked(source.text || source.excerpt, terms).map((piece, i) =>
+              piece.hit ? (
+                <mark key={i}>{piece.part}</mark>
+              ) : (
+                <span key={i}>{piece.part}</span>
+              ),
+            )}
+          </div>
+          <div className="sheet-foot num">
+            {source.chunk_id} · 표시된 부분은 질문·답변과 겹치는 자리입니다
+          </div>
+        </>
+      )}
+    </dialog>
+  );
+}
+
 function NearbyList({ current }: { current: string }) {
   const [items, setItems] = useState<Notice[]>([]);
 
