@@ -370,6 +370,39 @@ export async function askStream(
   return out;
 }
 
+/** `GET /logs` 의 한 건. */
+export type LogFile = {
+  name: string;
+  exists: boolean;
+  bytes: number;
+  at: string | null;
+};
+
+export type LogTail = {
+  name: string;
+  at?: string;
+  bytes?: number;
+  lines: string[];
+  note?: string;
+};
+
+/**
+ * VM 의 운영 로그를 본다. **ssh 를 안 쓰는 사람이 크론을 확인할 유일한 창구다.**
+ *
+ * 경로가 아니라 이름을 넘긴다. 서버가 표에서 찾는다 — 경로를 받으면
+ * `../../.env` 를 막는 코드를 우리가 짜야 하고, 그건 늘 한 군데가 빈다.
+ */
+export async function logFiles(): Promise<LogFile[]> {
+  const res = await fetch(API + "/logs");
+  return res.ok ? res.json() : [];
+}
+
+export async function logTail(name: string, lines = 200): Promise<LogTail> {
+  const res = await fetch(API + `/logs/${name}?lines=${lines}`);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json();
+}
+
 /** 사용자가 끊은 것인가. 취소를 빨간 오류로 띄우면 고장 난 줄 안다. */
 export function isAbort(e: unknown): boolean {
   return e instanceof DOMException && e.name === "AbortError";
