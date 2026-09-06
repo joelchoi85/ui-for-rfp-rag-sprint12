@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LogFile, LogTail, logFiles, logTail, when } from "../lib";
+import { evalRuns, LogFile, LogTail, logFiles, logTail, when } from "../lib";
 
 /** `/health` 에서 우리가 쓰는 칸만. 나머지는 그대로 흘려 보여 준다. */
 type Health = {
@@ -33,6 +33,8 @@ export default function AdminPage() {
   const [name, setName] = useState("refresh");
   const [tail, setTail] = useState<LogTail | null>(null);
   const [error, setError] = useState("");
+  // 동적 주소(/eval/<번호>)는 링크를 미리 못 박는다. 제일 최근 것으로 이어 준다.
+  const [lastRun, setLastRun] = useState("");
   const box = useRef<HTMLPreElement>(null);
   const stick = useRef(true);
 
@@ -42,6 +44,7 @@ export default function AdminPage() {
       setHealth(res.ok ? await res.json() : null);
       setFiles(await logFiles());
       setTail(await logTail(name, 300));
+      setLastRun((await evalRuns())[0]?.id ?? "");
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -66,14 +69,13 @@ export default function AdminPage() {
 
   return (
     <>
-      <header className="bar">
-        <Link href="/" className="brand">
-          입찰메이트
+      <div className="topbar">
+        <Link className="brand" href="/">
+          NLP of Legend
         </Link>
-        <nav className="bar-nav">
-          <Link href="/eval">평가</Link>
-        </nav>
-      </header>
+        <span className="topbar-div" />
+        <span className="topbar-title">운영</span>
+      </div>
 
       <main className="eval">
         <h1>운영</h1>
@@ -131,6 +133,51 @@ export default function AdminPage() {
             </tr>
           </tbody>
         </table>
+
+        {/* 4. 어디로 가야 하나. 주소를 외우고 있는 사람은 나뿐이다 */}
+        <h2>화면</h2>
+        <table className="metrics">
+          <tbody>
+            <tr>
+              <td>
+                <Link href="/">공고 검색</Link>
+              </td>
+              <td>1단계. 찾고, 바로 답하고, 공고로 들어간다</td>
+            </tr>
+            <tr>
+              <td>
+                <Link href="/eval">평가</Link>
+              </td>
+              <td>질문셋을 올려 발췌 → 답변 → 채점을 돌린다</td>
+            </tr>
+            <tr>
+              <td>
+                {lastRun ? (
+                  <Link href={`/eval/${lastRun}`}>최근 평가 결과</Link>
+                ) : (
+                  "최근 평가 결과"
+                )}
+              </td>
+              <td>
+                {lastRun
+                  ? `${lastRun} · 진행률과 로그`
+                  : "아직 돌린 적이 없습니다"}
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <a href="/api/health" target="_blank" rel="noreferrer">
+                  /api/health
+                </a>
+              </td>
+              <td>배선 전체를 한 번에 (Vercel → VM → TEI · 색인)</td>
+            </tr>
+          </tbody>
+        </table>
+        <p className="hint">
+          공고 상세(<code>/notice/&lt;공고번호&gt;</code>)는 검색 결과에서
+          공고를 누르면 들어간다. 주소를 직접 칠 일은 없다.
+        </p>
 
         {/* 3. 왜 실패했나 */}
         <h2>로그</h2>
