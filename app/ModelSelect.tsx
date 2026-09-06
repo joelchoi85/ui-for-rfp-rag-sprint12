@@ -39,7 +39,11 @@ export function ModelSelect({
       const saved = pickedModel();
       const key = saved && got.some((m) => m.key === saved) ? saved : value;
       const next = got.some((m) => m.key === key) ? key : got[0]?.key;
-      if (next) onChange(next, got.find((m) => m.key === next));
+      if (next)
+        onChange(
+          next,
+          got.find((m) => m.key === next),
+        );
     });
     // value/onChange 를 넣으면 부모가 다시 그릴 때마다 목록을 다시 받는다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,7 +51,10 @@ export function ModelSelect({
 
   function choose(key: string) {
     pickModel(key);
-    onChange(key, list.find((m) => m.key === key));
+    onChange(
+      key,
+      list.find((m) => m.key === key),
+    );
   }
 
   return (
@@ -61,6 +68,7 @@ export function ModelSelect({
       {list.map((m) => (
         <option key={m.key} value={m.key}>
           {modelLabel(m.name)}
+          {m.effort ? ` · ${m.effort}` : ""}
           {isCold(m) ? " · 교체 1~2분" : ""}
         </option>
       ))}

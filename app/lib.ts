@@ -103,6 +103,10 @@ export type Model = {
   /** 문항 하나당 대략의 달러. **VM 모델(sglang)은 0 이다** — 우리 GPU 를 쓴다.
    *  값은 VM 의 `config/model_config.py` 에서 온다. 화면에 다시 적지 않는다. */
   usd_per_call: number;
+  /** OpenAI 모델의 reasoning_effort. **키가 달라도 model 이 같을 수 있어서**
+   *  (mini 와 mini-fast 는 둘 다 gpt-5-mini) 이게 없으면 드롭다운에 같은
+   *  이름이 두 줄 뜬다. VM 모델(sglang)은 null. */
+  effort?: string | null;
 };
 
 /** `kakaocorp/kanana-1.5-8b-instruct-2505` → `kanana-1.5-8b-instruct-2505` */
