@@ -345,7 +345,7 @@ export default function SearchPage() {
           <div className="askbar">
             <div className="askbar-head" aria-live="polite">
               <span className="spinner" />
-              <span>답을 만드는 중… {waited}초</span>
+              <span>근거를 읽는 중… {waited}초</span>
             </div>
           </div>
         )}
