@@ -11,6 +11,9 @@
  * 그래도 헷갈리지 않게 `next.config.ts` 에서 그 규칙을 지웠다.
  */
 
+// `/ask/stream` 이 흘러가려면 요청마다 새로 돌아야 한다.
+export const dynamic = "force-dynamic";
+
 const BACKEND = process.env.RFP_API ?? "http://localhost:8010";
 const TOKEN = process.env.RFP_TOKEN ?? "";
 
