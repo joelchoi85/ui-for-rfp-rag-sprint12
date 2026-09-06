@@ -4,12 +4,13 @@ import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
 import {
   Answer,
+  askStream,
   day,
+  isAbort,
   dday,
   Notice,
   picked,
   fetchNotice,
-  post,
   Source,
   lastSearch,
   marked,
@@ -48,6 +49,8 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
   const [asking, setAsking] = useState(false);
+  // 지금 돌고 있는 답변 요청. 멈추기와 "새 질문이 옛 질문을 끊는다" 둘 다 쓴다.
+  const abort = useRef<AbortController | null>(null);
   const [step, setStep] = useState(0);
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [failure, setFailure] = useState("");
@@ -84,17 +87,40 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
     setAnswer(null);
     setFailure("");
     setStep(0);
+    abort.current?.abort();
+    const control = new AbortController();
+    abort.current = control;
     setAsking(true);
     try {
+      const partial: Answer = {
+        ok: true,
+        answer: "",
+        error: null,
+        model: null,
+        latency_sec: null,
+        usage: null,
+        sources: [],
+      };
       setAnswer(
-        await post<Answer>("/ask", { question: text, doc_ids: [id], model }),
+        await askStream(
+          { question: text, doc_ids: [id], model },
+          (sofar) => setAnswer({ ...partial, answer: sofar }),
+          (meta) => {
+            partial.search_sec = meta.search_sec;
+            partial.sources = meta.sources;
+            setAnswer({ ...partial });
+          },
+          control.signal,
+        ),
       );
       // 답이 왔으면 그 모델은 지금 올라와 있다. 드롭다운의 "교체 1~2분" 을 지운다.
       setAnswered((n) => n + 1);
     } catch (e) {
+      // 멈춘 건 오류가 아니다. 그때까지 온 글자를 그대로 둔다.
+      if (isAbort(e)) return;
       setFailure(e instanceof Error ? e.message : String(e));
     } finally {
-      setAsking(false);
+      if (abort.current === control) setAsking(false);
     }
   }
 
@@ -231,7 +257,7 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
 
           {asked && <h2 className="q">{asked}</h2>}
 
-          {asking && (
+          {asking && !answer?.answer && (
             <>
               <div className="steps">
                 {cold ? (
@@ -341,7 +367,8 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                   onActive={setActiveCite}
                 />
               </div>
-              <div className="answer-meta num">
+              {/* `model` 은 마지막 줄에서 온다 — 그전엔 아직 만드는 중이다. */}
+              <div className="answer-meta num" hidden={!answer.model}>
                 <span>{answer.model}</span>
                 {/* **검색과 생성을 나눠 보여준다.** "5초" 만 알면 어디를
                     줄여야 할지 모른다. 거의 늘 생성 쪽이 길다. */}
@@ -384,12 +411,19 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
               placeholder="이 공고에 대해 물어보세요…"
               aria-label="질문"
             />
-            <button
-              className="btn btn-primary"
-              disabled={asking || !question.trim()}
-            >
-              보내기
-            </button>
+            {asking ? (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => abort.current?.abort()}
+              >
+                <span className="spinner" /> 멈추기
+              </button>
+            ) : (
+              <button className="btn btn-primary" disabled={!question.trim()}>
+                보내기
+              </button>
+            )}
           </form>
         </div>
 

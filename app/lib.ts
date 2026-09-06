@@ -269,6 +269,108 @@ export async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json();
 }
 
+/**
+ * `POST /ask/stream` 을 읽어 글자가 오는 대로 넘긴다.
+ *
+ * **SSE 가 아니라 NDJSON 이다.** `EventSource` 는 GET 만 되는데 이 요청은 본문이
+ * 필요해서 POST 다. 어차피 `fetch` 로 읽으니 `data:` 틀이 하는 일이 없다.
+ *
+ * 반환값은 `post<Answer>("/ask", …)` 와 같은 모양이다. 그래서 부르는 쪽은
+ * 콜백만 하나 더 넘기면 되고, 스트리밍이 막혀 서버가 한 번에 보내도 코드가
+ * 그대로 돈다 — 그때는 `onDelta` 가 딱 한 번 불린다.
+ *
+ * @param body /ask 와 같은 요청 본문.
+ * @param onDelta 새 글자 조각. 이어 붙이는 건 부르는 쪽이 한다.
+ * @param onMeta 검색이 끝난 시점. 답이 나오기 전에 출처를 먼저 그릴 수 있다.
+ * @param signal 끊을 신호. `abort()` 하면 `AbortError` 를 던지므로 부르는
+ *   쪽에서 `isAbort()` 로 걸러 오류로 안 띄운다.
+ */
+export async function askStream(
+  body: unknown,
+  onDelta: (text: string) => void,
+  onMeta?: (meta: { search_sec: number; sources: Source[] }) => void,
+  signal?: AbortSignal,
+): Promise<Answer> {
+  const res = await fetch(API + "/ask/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!res.ok || !res.body) {
+    let why = "";
+    try {
+      const { detail } = await res.json();
+      why = typeof detail === "string" ? detail : "";
+    } catch {
+      // 본문이 JSON 이 아니면 상태 줄만 쓴다
+    }
+    throw new Error(why || `${res.status} ${res.statusText}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let answer = "";
+  const out: Answer = {
+    ok: true,
+    answer: "",
+    error: null,
+    model: null,
+    latency_sec: null,
+    usage: null,
+    sources: [],
+  };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    // `fetch` 의 signal 은 응답이 시작되면 본문까지 끊어 주지만, 브라우저마다
+    // 시점이 다르다. 여기서도 한 번 본다 — 안 그러면 취소 후에도 글자가 붙는다.
+    if (signal?.aborted) {
+      await reader.cancel();
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+    // 마지막 조각은 줄이 덜 왔을 수 있다. 남겨 뒀다가 다음에 이어 붙인다.
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      let event: Record<string, unknown>;
+      try {
+        event = JSON.parse(line);
+      } catch {
+        continue; // 깨진 줄 하나 때문에 답 전체를 버리지 않는다
+      }
+      if (event.type === "meta") {
+        out.search_sec = event.search_sec as number;
+        out.sources = (event.sources as Source[]) ?? [];
+        onMeta?.({ search_sec: out.search_sec, sources: out.sources });
+      } else if (event.type === "delta") {
+        answer += event.text as string;
+        onDelta(answer);
+      } else if (event.type === "done") {
+        out.model = (event.model as string) ?? null;
+        out.usage = (event.usage as Answer["usage"]) ?? null;
+        out.latency_sec = (event.latency_sec as number) ?? null;
+        out.total_sec = event.total_sec as number;
+      } else if (event.type === "error") {
+        out.ok = false;
+        out.error = String(event.error);
+      }
+    }
+  }
+
+  out.answer = answer;
+  return out;
+}
+
+/** 사용자가 끊은 것인가. 취소를 빨간 오류로 띄우면 고장 난 줄 안다. */
+export function isAbort(e: unknown): boolean {
+  return e instanceof DOMException && e.name === "AbortError";
+}
+
 /** 드롭다운에 채울 모델 목록. 실패하면 빈 배열 — 모델 선택 하나 때문에 화면이 죽지 않는다. */
 export async function models(): Promise<Model[]> {
   try {
@@ -346,7 +448,7 @@ export type Metrics = Record<string, Record<string, number>>;
  */
 export type EvalJob = {
   id: string;
-  status: "running" | "done" | "failed" | "interrupted";
+  status: "running" | "done" | "failed" | "interrupted" | "cancelled";
   step: string;
   done: number;
   total: number;
@@ -401,6 +503,15 @@ export async function uploadEvalSet(file: File): Promise<{
 export async function evalRuns(): Promise<EvalRow[]> {
   const res = await fetch(API + "/eval");
   return res.ok ? res.json() : [];
+}
+
+/**
+ * 돌던 평가를 멈춘다. 160문항 채점은 몇십 분이라 되돌릴 방법이 있어야 한다.
+ *
+ * `stopped: false` 는 오류가 아니다 — 화면이 마지막으로 본 뒤에 끝났다는 뜻이다.
+ */
+export async function cancelEval(id: string): Promise<{ stopped: boolean }> {
+  return post(`/eval/${id}/cancel`, {});
 }
 
 export async function evalJob(id: string): Promise<EvalJob> {

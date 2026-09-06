@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
-import { EvalJob, METRIC_ORDER, evalJob, lapse, when } from "../../lib";
+import {
+  cancelEval,
+  EvalJob,
+  METRIC_ORDER,
+  evalJob,
+  lapse,
+  when,
+} from "../../lib";
 import { Status } from "../page";
 
 const TYPES = ["전체", "배점", "요구사항", "의역"];
@@ -27,6 +34,7 @@ export default function EvalRunPage({
   // 순수하지 않다(같은 상태로 두 번 그리면 값이 달라진다). 폴링할 때 같이 담는다.
   const [now, setNow] = useState(0);
   const [error, setError] = useState("");
+  const [stopping, setStopping] = useState(false);
   const logBox = useRef<HTMLPreElement>(null);
   const stick = useRef(true);
 
@@ -129,6 +137,29 @@ export default function EvalRunPage({
               {job.done} / {job.total}
             </span>
           </div>
+        )}
+
+        {/* 발췌는 다음 문항에서, 답변·채점은 자식 프로세스를 끊어서 멈춘다.
+            그래서 누른 뒤 몇 초 있다가 상태가 바뀐다 — 그동안 다시 못 누르게 한다. */}
+        {job.status === "running" && (
+          <p>
+            <button
+              className="btn btn-secondary btn-sm"
+              disabled={stopping}
+              onClick={async () => {
+                setStopping(true);
+                try {
+                  await cancelEval(id);
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : String(e));
+                  setStopping(false);
+                }
+              }}
+            >
+              {stopping && <span className="spinner" />}{" "}
+              {stopping ? "멈추는 중…" : "멈추기"}
+            </button>
+          </p>
         )}
 
         {job.error && (

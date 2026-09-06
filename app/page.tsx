@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Answer,
+  askStream,
   clearLast,
+  isAbort,
   day,
   dday,
   forget,
@@ -45,6 +47,8 @@ export default function SearchPage() {
   // 매 검색마다 자동으로 돌리면 느리고 돈이 든다.
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [asking, setAsking] = useState(false);
+  // 지금 돌고 있는 답변 요청. 멈추기와 "새 질문이 옛 질문을 끊는다" 둘 다 쓴다.
+  const abort = useRef<AbortController | null>(null);
   const [activeCite, setActiveCite] = useState<number | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const [openHistory, setOpenHistory] = useState(false);
@@ -124,10 +128,42 @@ export default function SearchPage() {
   }
 
   async function ask(text = query) {
+    // 앞의 질문이 돌고 있으면 끊는다. 두 답이 같은 칸에 섞여 들어오면
+    // 어느 질문의 답인지 알 수 없다.
+    abort.current?.abort();
+    const control = new AbortController();
+    abort.current = control;
     setAsking(true);
+    setAnswer(null);
     try {
-      setAnswer(await post<Answer>("/ask", { question: text, model }));
+      // 글자가 오는 대로 화면에 붙인다. 답이 다 나오길 기다리면 9초를 본다.
+      // `partial` 을 고쳐 가며 매번 새 객체로 넘긴다 — 안 그러면 React 가
+      // 같은 객체로 보고 다시 안 그린다.
+      const partial: Answer = {
+        ok: true,
+        answer: "",
+        error: null,
+        model: null,
+        latency_sec: null,
+        usage: null,
+        sources: [],
+      };
+      setAnswer(
+        await askStream(
+          { question: text, model },
+          (sofar) => setAnswer({ ...partial, answer: sofar }),
+          (meta) => {
+            // 출처가 답보다 먼저 온다. 근거를 먼저 그려 준다.
+            partial.search_sec = meta.search_sec;
+            partial.sources = meta.sources;
+            setAnswer({ ...partial });
+          },
+          control.signal,
+        ),
+      );
     } catch (e) {
+      // 사용자가 멈춘 것은 오류가 아니다. 그때까지 온 글자를 그대로 둔다.
+      if (isAbort(e)) return;
       setAnswer({
         ok: false,
         answer: null,
@@ -138,7 +174,9 @@ export default function SearchPage() {
         sources: [],
       });
     } finally {
-      setAsking(false);
+      // 새 질문이 이걸 끊고 시작했다면 그쪽이 아직 돌고 있다. 여기서 끄면
+      // 스피너가 사라지고 화면이 다 된 것처럼 보인다.
+      if (abort.current === control) setAsking(false);
     }
   }
 
@@ -223,10 +261,18 @@ export default function SearchPage() {
           <button
             type="button"
             className="btn btn-secondary btn-lg"
-            disabled={status === "loading" || asking || !query.trim()}
-            onClick={() => search(query, true)}
+            disabled={!asking && (status === "loading" || !query.trim())}
+            onClick={() =>
+              asking ? abort.current?.abort() : search(query, true)
+            }
           >
-            {asking ? <span className="spinner" /> : null} 바로 답하기
+            {asking ? (
+              <>
+                <span className="spinner" /> 멈추기
+              </>
+            ) : (
+              "바로 답하기"
+            )}
           </button>
 
           {openHistory && history.length > 0 && (
@@ -295,7 +341,7 @@ export default function SearchPage() {
         {/* 답변은 검색과 **나란히** 돈다. 그러니 대기 표시도 따로 떠야 한다.
             목록이 다 온 뒤에 나타나면, 누른 직후 1~2초는 아무 표시가 없다가
             갑자기 뜬다 — 그게 "무엇을 기다리는지 모르겠다" 로 보인다. */}
-        {asking && !answer && (
+        {asking && !answer?.answer && (
           <div className="askbar">
             <div className="askbar-head" aria-live="polite">
               <span className="spinner" />
@@ -574,16 +620,19 @@ function AskBar({
               onActive={onActive}
             />
           </div>
-          {/* 검색과 생성을 나눠 보여준다. 거의 늘 생성 쪽이 길다. */}
-          <div className="answer-meta num">
-            <span>{answer.model}</span>
-            {answer.search_sec != null && (
-              <span>· 검색 {answer.search_sec.toFixed(1)}초</span>
-            )}
-            {answer.latency_sec != null && (
-              <span>· 생성 {answer.latency_sec.toFixed(1)}초</span>
-            )}
-          </div>
+          {/* 검색과 생성을 나눠 보여준다. 거의 늘 생성 쪽이 길다.
+              `model` 은 마지막 줄에서 온다 — 그전엔 아직 만드는 중이다. */}
+          {answer.model && (
+            <div className="answer-meta num">
+              <span>{answer.model}</span>
+              {answer.search_sec != null && (
+                <span>· 검색 {answer.search_sec.toFixed(1)}초</span>
+              )}
+              {answer.latency_sec != null && (
+                <span>· 생성 {answer.latency_sec.toFixed(1)}초</span>
+              )}
+            </div>
+          )}
           {/* **누르면 그 공고로 간다.** 하이라이팅만 되고 아무 일도 안 일어나면
               "왜 눌리지" 가 된다. 사용자가 출처를 누르는 이유는 그 공고를 더
               보려는 것이다. 목록에 있는 건이면 값을 세션에 넘겨 화면이 즉시

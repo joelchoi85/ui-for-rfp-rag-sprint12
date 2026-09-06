@@ -299,12 +299,15 @@ export function Status({ status }: { status: EvalRow["status"] }) {
       ? "badge-success"
       : status === "running"
         ? "badge-info"
-        : "badge-danger";
+        : status === "cancelled"
+          ? ""
+          : "badge-danger";
   const label = {
     done: "완료",
     running: "도는 중",
     failed: "실패",
     interrupted: "중단",
+    cancelled: "멈춤",
   }[status];
   return <span className={`badge ${tone}`}>{label}</span>;
 }
