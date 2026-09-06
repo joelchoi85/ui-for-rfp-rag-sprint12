@@ -33,6 +33,9 @@ export default function AdminPage() {
   const [name, setName] = useState("refresh");
   const [tail, setTail] = useState<LogTail | null>(null);
   const [error, setError] = useState("");
+  // 10초마다 화면이 조용히 바뀐다. 로그를 읽는 중이면 그게 방해가 된다.
+  const [paused, setPaused] = useState(false);
+  const [readAt, setReadAt] = useState("");
   // 동적 주소(/eval/<번호>)는 링크를 미리 못 박는다. 제일 최근 것으로 이어 준다.
   const [lastRun, setLastRun] = useState("");
   const box = useRef<HTMLPreElement>(null);
@@ -45,6 +48,7 @@ export default function AdminPage() {
       setFiles(await logFiles());
       setTail(await logTail(name, 300));
       setLastRun((await evalRuns())[0]?.id ?? "");
+      setReadAt(new Date().toLocaleTimeString("ko-KR"));
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -54,9 +58,10 @@ export default function AdminPage() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     load();
+    if (paused) return;
     const timer = setInterval(load, EVERY);
     return () => clearInterval(timer);
-  }, [load]);
+  }, [load, paused]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // 위로 올려 옛 줄을 읽는 중이면 끌어내리지 않는다.
@@ -86,94 +91,102 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 1. 크론이 도는가 — 이게 제일 자주 묻는 질문이다 */}
+        {/* 1. 크론이 도는가 — 이게 제일 자주 묻는 질문이다.
+            10초마다 조용히 바뀌므로 한 문장으로 읽어 준다. 배지 색만 바꾸거나
+            숫자만 던지면 화면을 안 보는 사람은 무슨 일이 났는지 모른다. */}
         <h2>마지막 갱신</h2>
-        {refresh ? (
-          <p>
-            <span
-              className={`badge ${refresh.ok ? "badge-success" : "badge-danger"}`}
-            >
-              {refresh.ok ? "성공" : "실패"}
-            </span>{" "}
-            {when(Date.parse(refresh.at) / 1000)} ·{" "}
-            {refresh.at.slice(0, 19).replace("T", " ")}
-            {!refresh.ok && ` · ${refresh.step} 에서 멈췄습니다`}
-          </p>
-        ) : (
-          <p>아직 한 번도 안 돌았거나 기록이 없습니다.</p>
-        )}
+        <p role="status" aria-atomic="true">
+          {refresh ? (
+            <>
+              <span
+                className={`badge ${refresh.ok ? "badge-success" : "badge-danger"}`}
+              >
+                {refresh.ok ? "성공" : "실패"}
+              </span>{" "}
+              {when(Date.parse(refresh.at) / 1000)} ·{" "}
+              {refresh.at.slice(0, 19).replace("T", " ")}
+              {!refresh.ok && ` · ${refresh.step} 에서 멈췄습니다`}
+            </>
+          ) : (
+            "아직 한 번도 안 돌았거나 기록이 없습니다."
+          )}
+        </p>
 
         {/* 2. 무엇을 보고 있는가 — 배포 사고의 절반이 여기가 어긋난 것 */}
         <h2>지금 상태</h2>
-        <table className="metrics">
-          <tbody>
-            <tr>
-              <td>임베더</td>
-              <td className="run-id">{health?.embedder ?? "—"}</td>
-            </tr>
-            <tr>
-              <td>리랭커</td>
-              <td className="run-id">{health?.reranker ?? "—"}</td>
-            </tr>
-            <tr>
-              <td>생성 모델</td>
-              <td className="run-id">
-                {health?.generator ?? "안 올라와 있음"}
-              </td>
-            </tr>
-            <tr>
-              <td>코퍼스</td>
-              <td className="run-id">{health?.chunks ?? "—"}</td>
-            </tr>
-            <tr>
-              <td>색인</td>
-              <td className="run-id">
-                {health?.index ?? "—"} ({health?.store ?? "—"})
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <table className="metrics">
+            <tbody>
+              <tr>
+                <td>임베더</td>
+                <td className="run-id">{health?.embedder ?? "—"}</td>
+              </tr>
+              <tr>
+                <td>리랭커</td>
+                <td className="run-id">{health?.reranker ?? "—"}</td>
+              </tr>
+              <tr>
+                <td>생성 모델</td>
+                <td className="run-id">
+                  {health?.generator ?? "안 올라와 있음"}
+                </td>
+              </tr>
+              <tr>
+                <td>코퍼스</td>
+                <td className="run-id">{health?.chunks ?? "—"}</td>
+              </tr>
+              <tr>
+                <td>색인</td>
+                <td className="run-id">
+                  {health?.index ?? "—"} ({health?.store ?? "—"})
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         {/* 4. 어디로 가야 하나. 주소를 외우고 있는 사람은 나뿐이다 */}
         <h2>화면</h2>
-        <table className="metrics">
-          <tbody>
-            <tr>
-              <td>
-                <Link href="/">공고 검색</Link>
-              </td>
-              <td>1단계. 찾고, 바로 답하고, 공고로 들어간다</td>
-            </tr>
-            <tr>
-              <td>
-                <Link href="/eval">평가</Link>
-              </td>
-              <td>질문셋을 올려 발췌 → 답변 → 채점을 돌린다</td>
-            </tr>
-            <tr>
-              <td>
-                {lastRun ? (
-                  <Link href={`/eval/${lastRun}`}>최근 평가 결과</Link>
-                ) : (
-                  "최근 평가 결과"
-                )}
-              </td>
-              <td>
-                {lastRun
-                  ? `${lastRun} · 진행률과 로그`
-                  : "아직 돌린 적이 없습니다"}
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <a href="/api/health" target="_blank" rel="noreferrer">
-                  /api/health
-                </a>
-              </td>
-              <td>배선 전체를 한 번에 (Vercel → VM → TEI · 색인)</td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <table className="metrics">
+            <tbody>
+              <tr>
+                <td>
+                  <Link href="/">공고 검색</Link>
+                </td>
+                <td>1단계. 찾고, 바로 답하고, 공고로 들어간다</td>
+              </tr>
+              <tr>
+                <td>
+                  <Link href="/eval">평가</Link>
+                </td>
+                <td>질문셋을 올려 발췌 → 답변 → 채점을 돌린다</td>
+              </tr>
+              <tr>
+                <td>
+                  {lastRun ? (
+                    <Link href={`/eval/${lastRun}`}>최근 평가 결과</Link>
+                  ) : (
+                    "최근 평가 결과"
+                  )}
+                </td>
+                <td>
+                  {lastRun
+                    ? `${lastRun} · 진행률과 로그`
+                    : "아직 돌린 적이 없습니다"}
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="/api/health" target="_blank" rel="noreferrer">
+                    /api/health
+                  </a>
+                </td>
+                <td>배선 전체를 한 번에 (Vercel → VM → TEI · 색인)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <p className="hint">
           공고 상세(<code>/notice/&lt;공고번호&gt;</code>)는 검색 결과에서
           공고를 누르면 들어간다. 주소를 직접 칠 일은 없다.
@@ -198,13 +211,23 @@ export default function AdminPage() {
           <button className="btn btn-secondary btn-sm" onClick={load}>
             새로 읽기
           </button>
-          {tail?.at && (
-            <span className="hint">{tail.at.replace("T", " ")}</span>
-          )}
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setPaused((on) => !on)}
+            aria-pressed={paused}
+          >
+            {paused ? "자동 갱신 켜기" : "자동 갱신 멈춤"}
+          </button>
+          <span className="hint">
+            {paused ? "멈춤" : `${EVERY / 1000}초마다`}
+            {readAt && ` · ${readAt} 읽음`}
+          </span>
         </p>
 
         <pre
           className="log"
+          aria-label="운영 로그"
+          tabIndex={0}
           ref={box}
           onScroll={(e) => {
             const el = e.currentTarget;
