@@ -617,6 +617,35 @@ function NearbyList({ current }: { current: string }) {
   );
 }
 
+/** 마크다운 표 한 줄을 셀로 쪼갠다. `| a | b |` → `["a", "b"]` */
+function cells(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\||\|$/g, "")
+    .split("|")
+    .map((c) => c.trim());
+}
+
+/** `|---|:--:|` 같은 구분선인가. 헤더와 본문을 가르는 줄이라 그리지 않는다. */
+function isRule(line: string): boolean {
+  return cells(line).every((c) => /^:?-{2,}:?$/.test(c));
+}
+
+/**
+ * 답변 본문을 화면에 그린다. **인용 번호는 누를 수 있는 버튼이 된다.**
+ *
+ * 프롬프트가 배점표·일정표·서류 목록을 **마크다운 표**로 내놓으라고 시킨다
+ * (`config/prompts/system.md`). 그런데 여기서 `\n\n` 으로 문단만 나누고 있어서
+ * `|---|---|` 가 글자 그대로 화면에 떴다. 하필 표를 시킨 항목들이 이 서비스에서
+ * 제일 많이 묻는 것들이다.
+ *
+ * **마크다운 라이브러리는 안 쓴다.** 모델이 내놓는 건 표·불릿·문단 셋뿐이라
+ * 그 셋만 그린다. 링크·강조·코드블록은 안 온다. 라이브러리를 넣으면 의존성과
+ * 번들이 늘고, 인용 버튼을 셀 안까지 살리려면 어차피 렌더러를 손대야 한다.
+ *
+ * @param text 모델이 준 답변 본문
+ * @param sources 발췌 목록. 여기 없는 번호는 버튼으로 안 만든다
+ */
 export function Cited({
   text,
   sources,
@@ -630,31 +659,87 @@ export function Cited({
 }) {
   const known = new Set(sources.map((s) => s.n));
 
+  // `[1]` 을 버튼으로. 문단·불릿·표 셀이 전부 이걸 지난다.
+  const inline = (chunk: string, key: string) =>
+    chunk.split(/(\[\d+\])/g).map((part, i) => {
+      const n = /^\[(\d+)\]$/.exec(part);
+      if (!n || !known.has(Number(n[1])))
+        return <span key={`${key}-${i}`}>{part}</span>;
+      const cite = Number(n[1]);
+      return (
+        <button
+          key={`${key}-${i}`}
+          className="cite"
+          aria-current={active === cite}
+          aria-label={`출처 ${cite}`}
+          onMouseEnter={() => onActive(cite)}
+          onMouseLeave={() => onActive(null)}
+          onClick={() => onActive(cite)}
+        >
+          {part}
+        </button>
+      );
+    });
+
   return (
     <>
-      {text.split("\n\n").map((paragraph, p) => (
-        <p key={p}>
-          {paragraph.split(/(\[\d+\])/g).map((part, i) => {
-            const n = /^\[(\d+)\]$/.exec(part);
-            if (!n || !known.has(Number(n[1])))
-              return <span key={i}>{part}</span>;
-            const cite = Number(n[1]);
-            return (
-              <button
-                key={i}
-                className="cite"
-                aria-current={active === cite}
-                aria-label={`출처 ${cite}`}
-                onMouseEnter={() => onActive(cite)}
-                onMouseLeave={() => onActive(null)}
-                onClick={() => onActive(cite)}
-              >
-                {part}
-              </button>
-            );
-          })}
-        </p>
-      ))}
+      {text.split(/\n{2,}/).map((block, b) => {
+        const lines = block.split("\n").filter((l) => l.trim());
+        const bars = lines.filter((l) => l.trim().startsWith("|"));
+
+        // 표 — 구분선까지 있어야 표로 본다. `|` 하나 든 문장을 표로 만들지 않는다.
+        if (bars.length >= 2 && bars.some(isRule)) {
+          const rows = bars.filter((l) => !isRule(l)).map(cells);
+          const [head, ...body] = rows;
+          return (
+            // 좁은 화면에서 본문이 통째로 밀리는 것보다 표 안에서 스크롤되는 게 낫다.
+            <div className="table-scroll" key={b}>
+              <table className="answer-table">
+                <thead>
+                  <tr>
+                    {head.map((c, i) => (
+                      <th key={i}>{inline(c, `${b}-h-${i}`)}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {body.map((row, r) => (
+                    <tr key={r}>
+                      {row.map((c, i) => (
+                        <td key={i}>{inline(c, `${b}-${r}-${i}`)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
+
+        // 불릿. `1.` 로 시작하는 줄은 번호가 본문이라 문단으로 남긴다.
+        const bullet = /^\s*[-*•]\s+/;
+        if (lines.length && lines.every((l) => bullet.test(l))) {
+          return (
+            <ul className="answer-list" key={b}>
+              {lines.map((l, i) => (
+                <li key={i}>{inline(l.replace(bullet, ""), `${b}-${i}`)}</li>
+              ))}
+            </ul>
+          );
+        }
+
+        // 문단. 홑 줄바꿈도 살린다 — 예전엔 한 줄로 이어 붙었다.
+        return (
+          <p key={b}>
+            {lines.map((l, i) => (
+              <span key={i}>
+                {i > 0 && <br />}
+                {inline(l, `${b}-${i}`)}
+              </span>
+            ))}
+          </p>
+        );
+      })}
     </>
   );
 }
