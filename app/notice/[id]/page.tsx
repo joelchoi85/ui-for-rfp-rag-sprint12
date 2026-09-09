@@ -157,6 +157,24 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
         />
       </div>
 
+      {notice?.교체안내?.length ? (
+        <div
+          className="alert alert-warn"
+          role="status"
+          aria-atomic="true"
+          style={{ margin: "var(--space-4) 0" }}
+        >
+          <div>
+            <div className="alert-title">이 공고의 문서가 교체되었습니다</div>
+            {notice.교체안내.map((why) => (
+              <div className="alert-body" key={why}>
+                {why}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="band">
         {notice ? (
           <>
@@ -469,19 +487,22 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                         key={source.n}
                         className="source"
                         aria-current={activeCite === source.n}
-                        aria-label={`출처 ${source.n} ${source.agency}`}
+                        aria-label={
+                          `출처 ${source.n} ${source.agency}` +
+                          (source.차수 !== null ? ` ${source.차수}차 공고` : "")
+                        }
                         onMouseEnter={() => setActiveCite(source.n)}
                         onMouseLeave={() => setActiveCite(null)}
                         onClick={() => setOpenSource(source)}
                       >
                         <span className="source-n">[{source.n}]</span>
-                        <div className="source-agency">{source.agency}</div>
-                        <div className="source-title">
-                          {source.title}
+                        <div className="source-agency">
+                          {source.agency}
                           {source.차수 !== null && (
                             <span className="badge">{source.차수}차</span>
                           )}
                         </div>
+                        <div className="source-title">{source.title}</div>
                         <div className="source-id">{source.chunk_id}</div>
                         {/* 답변의 근거가 된 원문. 평소 2줄, 짚으면 전부 보인다.
                           제목만 보여주면 "이 답이 어디서 나왔나" 를 확인할

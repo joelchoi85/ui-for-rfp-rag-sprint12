@@ -20,6 +20,12 @@ export type Notice = {
    * "1차와 뭐가 달라졌나" 를 답할 수 있다.
    */
   siblings?: string[];
+  /**
+   * 이 공고에서 **빠진 문서**가 있을 때 그 이유. 발주기관이 첨부를 잘못 올렸다가
+   * 차수를 올리며 교체한 경우다. 컨설턴트가 옛 문서를 이미 받아 갔을 수 있으니
+   * 조용히 사라지면 안 된다 — "어제 본 그 내용이 왜 없지" 가 된다.
+   */
+  교체안내?: string[];
   title: string;
   agency: string;
   budget: number | null;

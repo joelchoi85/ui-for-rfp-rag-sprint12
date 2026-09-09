@@ -426,6 +426,9 @@ select {
   font-size: var(--badge-font-size);
   font-weight: var(--badge-font-weight);
   background: var(--color-surface-sunken);
+  /* 배지는 한 줄로 둔다. "1차 (옛)" 처럼 두 낱말이 되면 좁은 카드에서 접힌다. */
+  white-space: nowrap;
+  flex: none;
   color: var(--color-text-muted);
 }
 .badge-success {
@@ -703,6 +706,9 @@ select {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.source-agency .badge {
+  margin-left: var(--space-2);
 }
 .source-id {
   font-family: var(--font-family-mono);
