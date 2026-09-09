@@ -10,6 +10,16 @@ export const API = "/api";
 /** `POST /search` 의 한 건. `청크수` 는 백엔드가 한글 키로 주는 그대로다. */
 export type Notice = {
   doc_id: string;
+  /** 공고 차수. `doc_id` 의 `-N` 이다. 규칙 밖 이름이면 null. */
+  차수: number | null;
+  /**
+   * 같은 공고번호의 doc_id 전부, 차수 오름차순.
+   *
+   * **본문이 같은 옛 차수는 백엔드가 이미 뺐다.** 그래서 이게 둘 이상이면
+   * 그 공고는 차수마다 내용이 실제로 다르다는 뜻이고, 질문할 때 전부 넘겨야
+   * "1차와 뭐가 달라졌나" 를 답할 수 있다.
+   */
+  siblings?: string[];
   title: string;
   agency: string;
   budget: number | null;
@@ -25,6 +35,8 @@ export type Notice = {
 export type Source = {
   n: number;
   doc_id: string;
+  /** 근거가 몇 차 공고에서 왔는지. 프롬프트 머리에 들어간 값과 같다. */
+  차수: number | null;
   title: string;
   agency: string;
   chunk_id: string;

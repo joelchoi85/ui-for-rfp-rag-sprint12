@@ -22,6 +22,7 @@ import {
 } from "./lib";
 import { Cited } from "./notice/[id]/page";
 import { ModelSelect } from "./ModelSelect";
+import { RevisionBadge } from "./RevisionBadge";
 import Image from "next/image";
 
 const EXAMPLES = [
@@ -462,6 +463,7 @@ function NoticeCard({
       <div className="card-row">
         <span className="card-agency">{notice.agency}</span>
         <span className="card-badges">
+          <RevisionBadge notice={notice} />
           <DdayBadge left={left} />
         </span>
       </div>

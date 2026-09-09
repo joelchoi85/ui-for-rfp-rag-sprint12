@@ -19,6 +19,7 @@ import {
   won,
 } from "../../lib";
 import { isCold, ModelSelect } from "../../ModelSelect";
+import { RevisionBadge } from "../../RevisionBadge";
 
 const SUGGESTED = [
   "배정예산은?",
@@ -103,7 +104,11 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
       };
       setAnswer(
         await askStream(
-          { question: text, doc_ids: [id], model },
+          // **형제 차수를 전부 넘긴다.** 본문이 같은 옛 차수는 백엔드가 이미
+          // 뺐으므로, 여럿이면 내용이 실제로 다르다는 뜻이다. 하나만 넘기면
+          // "1차와 뭐가 달라졌나" 가 구조적으로 답할 수 없는 질문이 된다.
+          // 프롬프트 머리에 `N차 공고` 가 붙어 모델이 둘을 가른다.
+          { question: text, doc_ids: notice?.siblings ?? [id], model },
           (sofar) => setAnswer({ ...partial, answer: sofar }),
           (meta) => {
             partial.search_sec = meta.search_sec;
@@ -139,6 +144,7 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
         </Link>
         <div className="topbar-div" />
         <span className="topbar-title">{notice?.title ?? id}</span>
+        {notice && <RevisionBadge notice={notice} />}
         <span className="spacer" />
         <ModelSelect
           value={model}
@@ -470,7 +476,12 @@ export default function NoticePage({ params }: PageProps<"/notice/[id]">) {
                       >
                         <span className="source-n">[{source.n}]</span>
                         <div className="source-agency">{source.agency}</div>
-                        <div className="source-title">{source.title}</div>
+                        <div className="source-title">
+                          {source.title}
+                          {source.차수 !== null && (
+                            <span className="badge">{source.차수}차</span>
+                          )}
+                        </div>
                         <div className="source-id">{source.chunk_id}</div>
                         {/* 답변의 근거가 된 원문. 평소 2줄, 짚으면 전부 보인다.
                           제목만 보여주면 "이 답이 어디서 나왔나" 를 확인할
